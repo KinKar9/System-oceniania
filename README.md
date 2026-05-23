@@ -1,1 +1,25 @@
-# System-oceniania
+# System Oceniania Studentów 
+
+## Opis Projektu
+
+## Instrukcja Uruchomienia
+
+Całe środowisko zostało w pełni skonteneryzowane. Nie musi instalować lokalnie bazy Oracle ani zewnętrznych klientów (DBeaver/SQL Developer). Wszystko uruchamia się jedną komendą, a zarządzanie bazą odbywa się przez przeglądarkę WWW.
+
+### Krok 1. Uruchomienie kontenerów
+Należy otworzyć terminal w głównym katalogu projektu (tam, gdzie znajduje się plik `docker-compose.yml`) i wykonać polecenie:
+```bash
+docker compose up -d
+
+### Krok 2. Dane do połączenia z bazą danych
+W dowolnym kliencie SQL należy utworzyć nowe połączenie typu Oracle i wprowadzić następujące dane konfiguracyjne:
+
+Host / Serwer: localhost
+
+Port: 1521
+
+SID / Service Name: FREE (lub XEPDB1)
+
+Użytkownik: system
+
+Hasło: Projekt2026Haslo

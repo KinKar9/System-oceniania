@@ -1,0 +1,17 @@
+# Pliki konfiguracyjne programów SQL Developer i DBeaver
+.sqldeveloper/
+.dbeaver/
+*.backgroundtasks
+.DATA/
+
+# Pliki systemowe i logi kontenerów
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+.docker/
+
+# Pliki edytorów kodu
+.vscode/
+.idea/

@@ -1,0 +1,15 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-xe:latest
+    container_name: projekt_oracle_xe
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PASSWORD=Projekt2026Haslo
+      - APP_USER=studenci_admin
+      - APP_USER_PASSWORD=Projekt2026Haslo
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+
+volumes:
+  oracle-data:
