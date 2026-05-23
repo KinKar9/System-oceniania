@@ -4,7 +4,7 @@
 
 ## Instrukcja Uruchomienia
 
-Całe środowisko zostało w pełni skonteneryzowane. Nie musi instalować lokalnie bazy Oracle ani zewnętrznych klientów (DBeaver/SQL Developer). Wszystko uruchamia się jedną komendą, a zarządzanie bazą odbywa się przez przeglądarkę WWW.
+
 
 ### Krok 1. Uruchomienie kontenerów
 Należy otworzyć terminal w głównym katalogu projektu (tam, gdzie znajduje się plik `docker-compose.yml`) i wykonać polecenie:
