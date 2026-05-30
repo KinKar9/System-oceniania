@@ -1,87 +1,47 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Oceniania - Nowy Pracownik</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            color: #111111;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        h1 { color: #0d47a1; }
-        .form-group {
-            margin-bottom: 15px;
-            max-width: 400px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            border: 2px solid #111111;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        input:focus {
-            outline: 3px solid #ffb300;
-        }
-        .btn {
-            padding: 10px 20px;
-            background-color: #0d47a1;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .btn:hover, .btn:focus {
-            background-color: #111111;
-            outline: 3px solid #ffb300;
-        }
-        .btn-secondary {
-            background-color: #efefef;
-            color: #111111;
-            border: 2px solid #111111;
-            text-decoration: none;
-            display: inline-block;
-            margin-left: 10px;
-        }
-    </style>
+    <title>Formularz Pracownika</title>
 </head>
 <body>
-
 <main>
-    <h1>Dodaj Nowego Pracownika</h1>
+    <h1 th:text="${pracownik.id == null} ? 'Dodaj nowego pracownika' : 'Edytuj pracownika'">Formularz</h1>
 
-    <form th:action="@{/pracownicy/zapisz}" th:object="${pracownik}" method="post">
+    <section aria-labelledby="form-heading">
+        <h2 id="form-heading" th:text="${pracownik.id == null} ? 'Wprowadź dane nowego pracownika' : 'Zmień dane pracownika'">Dane</h2>
 
-        <div class="form-group">
-            <label for="tytul">Tytuł naukowy:</label>
-            <input type="text" id="tytul" th:field="*{tytulNaukowy}" required placeholder="np. dr inż."/>
-        </div>
+        <form th:action="@{/pracownicy/zapisz}" th:object="${pracownik}" method="post">
+            <input type="hidden" th:field="*{id}" />
 
-        <div class="form-group">
-            <label for="imie">Imię:</label>
-            <input type="text" id="imie" th:field="*{imie}" required placeholder="np. Jan"/>
-        </div>
+            <div>
+                <label for="imie">Imię pracownika:</label>
+                <input type="text" id="imie" th:field="*{imie}" aria-required="true" />
+                <span th:if="${#fields.hasErrors('imie')}" th:errors="*{imie}" style="color: red;" role="alert">Błąd imienia</span>
+            </div>
 
-        <div class="form-group">
-            <label for="nazwisko">Nazwisko:</label>
-            <input type="text" id="nazwisko" th:field="*{nazwisko}" required placeholder="np. Kowalski"/>
-        </div>
+            <br/>
 
-        <button type="submit" class="btn">Zapisz pracownika</button>
-        <a href="/pracownicy" class="btn btn-secondary">Anuluj</a>
-    </form>
+            <div>
+                <label for="nazwisko">Nazwisko pracownika:</label>
+                <input type="text" id="nazwisko" th:field="*{nazwisko}" aria-required="true" />
+                <span th:if="${#fields.hasErrors('nazwisko')}" th:errors="*{nazwisko}" style="color: red;" role="alert">Błąd nazwiska</span>
+            </div>
+
+            <br/>
+
+            <div>
+                <label for="tytulNaukowy">Tytuł naukowy:</label>
+                <input type="text" id="tytulNaukowy" th:field="*{tytulNaukowy}" />
+                <span th:if="${#fields.hasErrors('tytulNaukowy')}" th:errors="*{tytulNaukowy}" style="color: red;" role="alert">Błąd tytułu</span>
+            </div>
+
+            <br/>
+
+            <button type="submit" aria-label="Zatwierdź i zapisz formularz">Zapisz pracownika</button>
+            <a href="/pracownicy" style="margin-left: 10px;">Anuluj</a>
+        </form>
+    </section>
 </main>
-
 </body>
 </html>

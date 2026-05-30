@@ -1,102 +1,45 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Oceniania - Przedmioty</title>
-    <style>
-        /* WCAG 2.1: Wysoki kontrast (minimum 4.5:1), widoczny focus i czytelność */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            color: #111111;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        h1 { color: #0d47a1; }
-        .btn {
-            display: inline-block;
-            padding: 10px 15px;
-            background-color: #0d47a1;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            border: 2px solid transparent;
-        }
-        .btn-danger { background-color: #d32f2f; }
-        .btn:hover, .btn:focus {
-            background-color: #111111;
-            color: #ffffff;
-            outline: 3px solid #ffb300; /* Wyraźny wskaźnik dla klawiatury */
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 2px solid #111111;
-            padding: 12px;
-            text-align: left;
-        }
-        th { background-color: #0d47a1; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .sr-only { /* Ukrywanie tekstu dostępnego tylko dla czytników ekranu (WCAG) */
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-    </style>
 </head>
 <body>
-
-<header>
-    <nav aria-label="Menu główne">
-        <a href="/przedmioty" style="font-weight: bold; margin-right: 15px;">Przedmioty</a>
-    </nav>
-</header>
-
 <main>
-    <h1>Lista Przedmiotów</h1>
+    <h1 id="main-heading">Zarządzanie Przedmiotami</h1>
 
-    <a th:href="@{/przedmioty/nowy}" class="btn">Dodaj nowy przedmiot</a>
+    <div style="margin-bottom: 20px;">
+        <a href="/przedmioty/nowy" role="button" aria-label="Przejdź do formularza dodawania nowego przedmiotu">➕ Dodaj nowy przedmiot</a>
+    </div>
 
-    <table>
-        <thead>
-        <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Kod przedmiotu</th>
-            <th scope="col">Nazwa przedmiotu</th>
-            <th scope="col">Kierunek</th>
-            <th scope="col">Akcje</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="p : ${przedmioty}">
-            <td th:text="${p.id}">1</td>
-            <td th:text="${p.kodPrzedmiotu}">INF-01</td>
-            <td th:text="${p.nazwa}">Matematyka</td>
-            <td th:text="${p.kierunek != null ? p.kierunek.nazwa : 'Brak kierunku'}">Informatyka</td>
-            <td>
-                <a th:href="@{/przedmioty/usun/{id}(id=${p.id})}"
-                   class="btn btn-danger"
-                   th:onclick="return confirm('Czy na pewno chcesz usunąć ten przedmiot?');">
-                    Usuń <span class="sr-only" th:text="${'przedmiot ' + p.nazwa}"></span>
-                </a>
-            </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(przedmioty)}">
-            <td colspan="5">Brak przedmiotów w systemie.</td>
-        </tr>
-        </tbody>
-    </table>
+    <section aria-label="Tabela przedmiotów">
+        <h2>Lista przedmiotów</h2>
+        <table border="1">
+            <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Kod przedmiotu</th>
+                <th scope="col">Nazwa</th>
+                <th scope="col">Akcje</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${przedmioty}">
+                <td th:text="${p.id}">1</td>
+                <td th:text="${p.kodPrzedmiotu}">INF-01</td>
+                <td th:text="${p.nazwa}">Bazy Danych</td>
+                <td>
+                    <a th:href="@{/przedmioty/edycja/{id}(id=${p.id})}"
+                       th:aria-label="'Edytuj przedmiot ' + ${p.nazwa}">Edytuj</a> |
+
+                    <a th:href="@{/przedmioty/usun/{id}(id=${p.id})}"
+                       th:aria-label="'Usuń przedmiot ' + ${p.nazwa}"
+                       onclick="return confirm('Czy na pewno chcesz usunąć ten przedmiot?')">Usuń</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
 </main>
-
 </body>
 </html>

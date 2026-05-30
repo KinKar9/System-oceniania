@@ -1,82 +1,39 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Oceniania - Nowa Sala</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            color: #111111;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        h1 { color: #0d47a1; }
-        .form-group {
-            margin-bottom: 15px;
-            max-width: 400px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            border: 2px solid #111111;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        input:focus {
-            outline: 3px solid #ffb300;
-        }
-        .btn {
-            padding: 10px 20px;
-            background-color: #0d47a1;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .btn:hover, .btn:focus {
-            background-color: #111111;
-            outline: 3px solid #ffb300;
-        }
-        .btn-secondary {
-            background-color: #efefef;
-            color: #111111;
-            border: 2px solid #111111;
-            text-decoration: none;
-            display: inline-block;
-            margin-left: 10px;
-        }
-    </style>
+    <title>Formularz Sali</title>
 </head>
 <body>
-
 <main>
-    <h1>Dodaj Nową Salę</h1>
+    <h1 th:text="${sala.id == null} ? 'Dodaj nową salę' : 'Edytuj salę'">Formularz Sali</h1>
 
-    <form th:action="@{/sale/zapisz}" th:object="${sala}" method="post">
+    <section aria-labelledby="form-sala">
+        <h2 id="form-sala" th:text="${sala.id == null} ? 'Wprowadź dane nowej sali' : 'Zmień dane sali'">Dane sali</h2>
 
-        <div class="form-group">
-            <label for="numerSali">Numer sali:</label>
-            <input type="text" id="numerSali" th:field="*{numerSali}" required placeholder="np. 314 lub LAB-02"/>
-        </div>
+        <form th:action="@{/sale/zapisz}" th:object="${sala}" method="post">
+            <input type="hidden" th:field="*{id}" />
 
-        <div class="form-group">
-            <label for="pojemnosc">Pojemność (liczba miejsc):</label>
-            <input type="number" id="pojemnosc" th:field="*{pojemnosc}" min="1" max="300" required placeholder="np. 30"/>
-        </div>
+            <div>
+                <label for="numerSali">Numer sali:</label>
+                <input type="text" id="numerSali" th:field="*{numerSali}" aria-required="true" />
+                <span th:if="${#fields.hasErrors('numerSali')}" th:errors="*{numerSali}" style="color: red;" role="alert">Błąd numeru</span>
+            </div>
 
-        <button type="submit" class="btn">Zapisz salę</button>
-        <a href="/sale" class="btn btn-secondary">Anuluj</a>
-    </form>
+            <br/>
+
+            <div>
+                <label for="pojemnosc">Pojemność sali:</label>
+                <input type="number" id="pojemnosc" th:field="*{pojemnosc}" aria-required="true" />
+                <span th:if="${#fields.hasErrors('pojemnosc')}" th:errors="*{pojemnosc}" style="color: red;" role="alert">Błąd pojemności</span>
+            </div>
+
+            <br/>
+
+            <button type="submit" aria-label="Zatwierdź i zapisz salę">Zapisz salę</button>
+            <a href="/sale" style="margin-left: 10px;">Anuluj</a>
+        </form>
+    </section>
 </main>
-
 </body>
 </html>

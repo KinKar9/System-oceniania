@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Karta Ocen Studenta</title>
+</head>
+<body>
+<main>
+    <header>
+        <h1 id="page-title">E-Dziennik: Podgląd Ocen Studenta</h1>
+    </header>
+
+    <section aria-labelledby="student-info">
+        <h2 id="student-info">Dane studenta</h2>
+        <p><strong>Student:</strong> <span th:text="${student.imie + ' ' + student.nazwisko}">Jan Kowalski</span></p>
+        <p><strong>Numer indeksu:</strong> <span th:text="${student.nrIndeksu}">123456</span></p>
+    </section>
+
+    <hr/>
+
+    <section aria-labelledby="stats-info">
+        <h2 id="stats-info">Podsumowanie wyników</h2>
+        <div style="background-color: #f0f0f0; padding: 10px; display: inline-block; border-radius: 5px;">
+            <p style="margin: 0; font-size: 1.2em;">
+                <strong>Średnia ocen (wyliczona przez system):</strong>
+                <span th:text="${srednia}" style="font-weight: bold; color: #0066cc;">4.25</span>
+            </p>
+        </div>
+    </section>
+
+    <br/>
+
+    <section aria-labelledby="grades-table">
+        <h2 id="grades-table">Wykaz ocen cząstkowych</h2>
+
+        <p th:if="${#lists.isEmpty(oceny)}">Brak wystawionych ocen w obecnym semestrze.</p>
+
+        <table border="1" th:if="${!#lists.isEmpty(oceny)}">
+            <thead>
+            <tr>
+                <th scope="col">Przedmiot</th>
+                <th scope="col">Ocena</th>
+                <th scope="col">Waga</th>
+                <th scope="col">Komentarz/Opis</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${oceny}">
+                <td th:text="${o.przedmiot != null ? o.przedmiot.nazwa : 'Brak danych'}">Matematyka</td>
+                <td th:text="${o.wartosc}" style="font-weight: bold;">5.0</td>
+                <td th:text="${o.waga}">1</td>
+                <td th:text="${o.opis}">Kolokwium zaliczeniowe</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

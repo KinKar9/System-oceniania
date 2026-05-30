@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Wystaw Ocene</title>
+</head>
+<body>
+<main>
+  <h1>Wystawianie nowej oceny cząstkowej</h1>
+
+  <form th:action="@{/oceny/zapisz}" th:object="${ocena}" method="post">
+
+    <div>
+      <label for="student">Student:</label>
+      <select id="student" th:field="*{student}">
+        <option th:each="s : ${students}" th:value="${s.id}" th:text="${s.imie + ' ' + s.nazwisko}"></option>
+      </select>
+      <span th:if="${#fields.hasErrors('student')}" th:errors="*{student}" style="color:red;" role="alert"></span>
+    </div>
+    <br/>
+
+    <div>
+      <label for="przedmiot">Przedmiot:</label>
+      <select id="przedmiot" th:field="*{przedmiot}">
+        <option th:each="p : ${przedmioty}" th:value="${p.id}" th:text="${p.nazwa}"></option>
+      </select>
+      <span th:if="${#fields.hasErrors('przedmiot')}" th:errors="*{przedmiot}" style="color:red;" role="alert"></span>
+    </div>
+    <br/>
+
+    <div>
+      <label for="wartosc">Ocena (np. 3.5):</label>
+      <input type="number" step="0.5" id="wartosc" th:field="*{wartosc}" aria-required="true" />
+      <span th:if="${#fields.hasErrors('wartosc')}" th:errors="*{wartosc}" style="color:red;" role="alert">Błąd wartości</span>
+    </div>
+    <br/>
+
+    <div>
+      <label for="waga">Waga oceny:</label>
+      <input type="number" id="waga" th:field="*{waga}" />
+      <span th:if="${#fields.hasErrors('waga')}" th:errors="*{waga}" style="color:red;" role="alert">Błąd wagi</span>
+    </div>
+    <br/>
+
+    <div>
+      <label for="opis">Opis (np. Kolokwium, Aktywność):</label>
+      <input type="text" id="opis" th:field="*{opis}" />
+      <span th:if="${#fields.hasErrors('opis')}" th:errors="*{opis}" style="color:red;" role="alert">Błąd opisu</span>
+    </div>
+    <br/>
+
+    <button type="submit" aria-label="Zapisz ocenę w dzienniku">Wystaw ocenę</button>
+    <a href="/oceny" style="margin-left: 10px;">Anuluj</a>
+  </form>
+</main>
+</body>
+</html>

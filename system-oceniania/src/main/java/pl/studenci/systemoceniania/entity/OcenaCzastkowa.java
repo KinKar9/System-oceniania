@@ -22,5 +22,9 @@ public class OcenaCzastkowa {
     @Column(name = "KOMENTARZ")
     private String komentarz;
 
+    @ManyToOne
+    @JoinColumn(name = "ID_STUDENTA", nullable = false)
+    private Student student;
+
     // gettery i settery
 }

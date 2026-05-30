@@ -30,15 +30,15 @@ CREATE TABLE Studenci (
     CONSTRAINT fk_studenci_kierunki FOREIGN KEY (id_kierunku) REFERENCES Kierunki(id_kierunku)
 );
 
-CREATE TABLE Wykladowcy (
-    id_wykladowcy NUMBER GENERATED ALWAYS AS IDENTITY START WITH 1 INCREMENT BY 1,
+CREATE TABLE Pracownicy (
+    id_pracownika NUMBER GENERATED ALWAYS AS IDENTITY START WITH 1 INCREMENT BY 1,
     id_wydzialu NUMBER NOT NULL,
     imie VARCHAR2(50) NOT NULL,
     nazwisko VARCHAR2(100) NOT NULL,
     tytul_naukowy VARCHAR2(50) NOT NULL,
     email VARCHAR2(100) NOT NULL UNIQUE,
-    CONSTRAINT pk_wykladowcy PRIMARY KEY (id_wykladowcy),
-    CONSTRAINT fk_wykladowcy_wydzialy FOREIGN KEY (id_wydzialu) REFERENCES Wydzialy(id_wydzialu)
+    CONSTRAINT pk_pracownika PRIMARY KEY (id_pracownika),
+    CONSTRAINT fk_pracownika_wydzialy FOREIGN KEY (id_wydzialu) REFERENCES Wydzialy(id_wydzialu)
 );
 
 -- OBSZAR LOGICZNY 2: KATALOG KURSÓW
@@ -63,11 +63,11 @@ CREATE TABLE Kursy_Oferta (
     id_oferty NUMBER GENERATED ALWAYS AS IDENTITY START WITH 1 INCREMENT BY 1,
     id_przedmiotu NUMBER NOT NULL,
     id_semestru NUMBER NOT NULL,
-    id_wykladowcy NUMBER NOT NULL,
+    id_pracownika NUMBER NOT NULL,
     CONSTRAINT pk_kursy_oferta PRIMARY KEY (id_oferty),
     CONSTRAINT fk_oferta_przedmioty FOREIGN KEY (id_przedmiotu) REFERENCES Przedmioty(id_przedmiotu),
     CONSTRAINT fk_oferta_semestry FOREIGN KEY (id_semestru) REFERENCES Semestry(id_semestru),
-    CONSTRAINT fk_oferta_wykladowcy FOREIGN KEY (id_wykladowcy) REFERENCES Wykladowcy(id_wykladowcy)
+    CONSTRAINT fk_oferta_pracownicy FOREIGN KEY (id_pracownika) REFERENCES Pracownicy(id_pracownika)
 );
 
 CREATE TABLE Grupy_Zajeciowe (
@@ -143,4 +143,12 @@ CREATE TABLE Logi_Ocen (
     data_modyfikacji DATE DEFAULT SYSDATE,
     uzytkownik VARCHAR2(50) DEFAULT USER,
     operacja VARCHAR2(20) NOT NULL -- 'INSERT', 'UPDATE', 'DELETE'
+);
+
+CREATE TABLE Historia_Logowania (
+    id NUMBER GENERATED ALWAYS AS IDENTITY START WITH 1 INCREMENT BY 1,
+    username VARCHAR2(100) NOT NULL,
+    data_logowania DATE DEFAULT SYSDATE,
+    data_wylogowania DATE,
+    CONSTRAINT pk_historia_logowania PRIMARY KEY (id)
 );

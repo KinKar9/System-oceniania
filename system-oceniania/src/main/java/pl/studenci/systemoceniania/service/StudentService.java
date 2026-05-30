@@ -30,4 +30,10 @@ public class StudentService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+    public Student findBySecureToken(String token) {
+        return repository.findBySecureToken(token)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Nieprawidłowy lub wygasły token dostępu."));
+    }
 }

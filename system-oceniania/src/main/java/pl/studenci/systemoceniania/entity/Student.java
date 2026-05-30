@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "STUDENCI")
@@ -39,5 +41,17 @@ public class Student {
     @Column(name = "DATA_URODZENIA")
     private LocalDate dataUrodzenia;
 
-    // gettery i settery
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OcenaCzastkowa> oceny = new ArrayList<>();
+
+    @Column(name = "SECURE_TOKEN", unique = true)
+    private String secureToken;
+
+    public Long getId() {
+        return id;
+    }
+
+    public List<OcenaCzastkowa> getOceny() {
+        return oceny;
+    }
 }
