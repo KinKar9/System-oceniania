@@ -1,0 +1,47 @@
+-- 1. KIERUNKI (Dodane nowe kierunki studiów)
+INSERT INTO KIERUNKI (ID, NAZWA) VALUES (1, 'Informatyka Stosowana');
+INSERT INTO KIERUNKI (ID, NAZWA) VALUES (2, 'Automatyka i Robotyka');
+INSERT INTO KIERUNKI (ID, NAZWA) VALUES (3, 'Inżynieria Danych');
+INSERT INTO KIERUNKI (ID, NAZWA) VALUES (4, 'Cyberbezpieczeństwo');
+
+-- 2. GRUPY (Więcej grup dziekańskich dla różnych roczników)
+INSERT INTO GRUPY (ID, NAZWA_GRUPY) VALUES (1, 'Grupa IO-11 (Rok 1)');
+INSERT INTO GRUPY (ID, NAZWA_GRUPY) VALUES (2, 'Grupa IO-12 (Rok 1)');
+INSERT INTO GRUPY (ID, NAZWA_GRUPY) VALUES (3, 'Grupa AR-21 (Rok 2)');
+INSERT INTO GRUPY (ID, NAZWA_GRUPY) VALUES (4, 'Grupa ID-31 (Rok 3)');
+INSERT INTO GRUPY (ID, NAZWA_GRUPY) VALUES (5, 'Grupa CYB-11 (Rok 1)');
+
+-- 3. PRACOWNICI (Większa kadra naukowa z różnymi tytułami)
+INSERT INTO PRACOWNICI (ID, IMIE, NAZWISKO, TYTUL_NAUKOWY) VALUES (1, 'Andrzej', 'Kowalski', 'Dr inż.');
+INSERT INTO PRACOWNICI (ID, IMIE, NAZWISKO, TYTUL_NAUKOWY) VALUES (2, 'Maria', 'Zielińska', 'Prof. dr hab.');
+INSERT INTO PRACOWNICI (ID, IMIE, NAZWISKO, TYTUL_NAUKOWY) VALUES (3, 'Jan', 'Nowak', 'Mgr inż.');
+INSERT INTO PRACOWNICI (ID, IMIE, NAZWISKO, TYTUL_NAUKOWY) VALUES (4, 'Krzysztof', 'Mazur', 'Dr hab.');
+INSERT INTO PRACOWNICI (ID, IMIE, NAZWISKO, TYTUL_NAUKOWY) VALUES (5, 'Barbara', 'Woźniak', 'Dr');
+
+-- 4. SALE (Więcej sal lekcyjnych i laboratoriów komputerowych)
+INSERT INTO SALE (ID, NUMER_SALI, POJEMNOSC) VALUES (1, '104-A (Laboratorium)', 30);
+INSERT INTO SALE (ID, NUMER_SALI, POJEMNOSC) VALUES (2, '215-B (Aula)', 120);
+INSERT INTO SALE (ID, NUMER_SALI, POJEMNOSC) VALUES (3, '03-Centrum', 15);
+INSERT INTO SALE (ID, NUMER_SALI, POJEMNOSC) VALUES (4, '301-C', 45);
+INSERT INTO SALE (ID, NUMER_SALI, POJEMNOSC) VALUES (5, '111-A', 25);
+
+-- 5. PRZEDMIOTY (Siatka przedmiotów przypisana do odpowiednich kierunków)
+-- Informatyka Stosowana (KIERUNEK_ID = 1)
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (1, 'INF-01', 'Programowanie Obiektowe', 1);
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (2, 'INF-02', 'Bazy Danych', 1);
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (3, 'INF-03', 'Algorytmy i Struktury Danych', 1);
+
+-- Automatyka i Robotyka (KIERUNEK_ID = 2)
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (4, 'AUT-01', 'Teoria Sterowania', 2);
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (5, 'AUT-02', 'Sensoryka i Aktuatory', 2);
+
+-- Inżynieria Danych (KIERUNEK_ID = 3)
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (6, 'DAT-01', 'Analiza Statystyczna', 3);
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (7, 'DAT-02', 'Hurtownie Danych', 3);
+
+-- Cyberbezpieczeństwo (KIERUNEK_ID = 4)
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (8, 'CYB-01', 'Kryptografia', 4);
+INSERT INTO PRZEDMIOTY (ID, KOD_PRZEDMIOTU, NAZWA, KIERUNEK_ID) VALUES (9, 'CYB-02', 'Bezpieczeństwo Sieci', 4);
+
+-- Zatwierdzenie wszystkich danych w Oracle
+COMMIT;

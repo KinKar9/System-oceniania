@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Oceniania - Nowy Pracownik</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #111111;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h1 { color: #0d47a1; }
+        .form-group {
+            margin-bottom: 15px;
+            max-width: 400px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #111111;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: 3px solid #ffb300;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #0d47a1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover, .btn:focus {
+            background-color: #111111;
+            outline: 3px solid #ffb300;
+        }
+        .btn-secondary {
+            background-color: #efefef;
+            color: #111111;
+            border: 2px solid #111111;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<main>
+    <h1>Dodaj Nowego Pracownika</h1>
+
+    <form th:action="@{/pracownicy/zapisz}" th:object="${pracownik}" method="post">
+
+        <div class="form-group">
+            <label for="tytul">Tytuł naukowy:</label>
+            <input type="text" id="tytul" th:field="*{tytulNaukowy}" required placeholder="np. dr inż."/>
+        </div>
+
+        <div class="form-group">
+            <label for="imie">Imię:</label>
+            <input type="text" id="imie" th:field="*{imie}" required placeholder="np. Jan"/>
+        </div>
+
+        <div class="form-group">
+            <label for="nazwisko">Nazwisko:</label>
+            <input type="text" id="nazwisko" th:field="*{nazwisko}" required placeholder="np. Kowalski"/>
+        </div>
+
+        <button type="submit" class="btn">Zapisz pracownika</button>
+        <a href="/pracownicy" class="btn btn-secondary">Anuluj</a>
+    </form>
+</main>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 services:
   oracle-db:
-    image: gvenzl/oracle-xe:latest
+    image: gvenzl/oracle-free:latest
     container_name: projekt_oracle_xe
     ports:
       - "1521:1521"
@@ -10,6 +10,7 @@ services:
       - APP_USER_PASSWORD=Projekt2026Haslo
     volumes:
       - oracle-data:/opt/oracle/oradata
+      - ./init-scripts:/docker-entrypoint-initdb.d
 
 volumes:
   oracle-data:

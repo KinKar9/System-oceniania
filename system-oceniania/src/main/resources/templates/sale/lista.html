@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Oceniania - Sale</title>
+  <style>
+    /* WCAG 2.1: Wysoki kontrast, wyraźne obramowania, widoczny focus */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #111111;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    h1 { color: #0d47a1; }
+    .btn {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #0d47a1;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      border: 2px solid transparent;
+    }
+    .btn-danger { background-color: #d32f2f; }
+    .btn:hover, .btn:focus {
+      background-color: #111111;
+      color: #ffffff;
+      outline: 3px solid #ffb300;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 2px solid #111111;
+      padding: 12px;
+      text-align: left;
+    }
+    th { background-color: #0d47a1; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav aria-label="Menu główne">
+    <a href="/przedmioty" style="margin-right: 15px;">Przedmioty</a>
+    <a href="/pracownicy" style="margin-right: 15px;">Pracownicy</a>
+    <a href="/sale" style="font-weight: bold;">Sale</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Lista Sal Wykładowych i Laboratoryjnych</h1>
+
+  <a th:href="@{/sale/nowy}" class="btn">Dodaj nową salę</a>
+
+  <table>
+    <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Numer sali</th>
+      <th scope="col">Pojemność (miejsca)</th>
+      <th scope="col">Akcje</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="s : ${sale}">
+      <td th:text="${s.id}">1</td>
+      <td th:text="${s.numerSali}">105A</td>
+      <td th:text="${s.pojemnosc}">30</td>
+      <td>
+        <a th:href="@{/sale/usun/{id}(id=${s.id})}"
+           class="btn btn-danger"
+           th:onclick="return confirm('Czy na pewno chcesz usunąć tę salę?');">
+          Usuń <span class="sr-only" th:text="${'salę numer ' + s.numerSali}"></span>
+        </a>
+      </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(sale)}">
+      <td colspan="4">Brak zarejestrowanych sal w systemie.</td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+
+</body>
+</html>
