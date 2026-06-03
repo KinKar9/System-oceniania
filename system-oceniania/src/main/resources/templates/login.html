@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie do Systemu Oceniania</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; }
+        h2 { text-align: center; }
+        input { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .error { color: red; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h2>System Oceniania – Logowanie</h2>
+    <form th:action="@{/login}" method="post">
+        <div th:if="${param.error}" class="error">Nieprawidłowa nazwa użytkownika lub hasło</div>
+        <div th:if="${param.logout}" class="info" style="color:green;">Zostałeś wylogowany</div>
+        <label for="username">Nazwa użytkownika:</label>
+        <input type="text" id="username" name="username" required autofocus>
+        <label for="password">Hasło:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Zaloguj się</button>
+    </form>
+    <p style="text-align:center; margin-top:16px;">Dane testowe:<br>admin/admin123, nauczyciel/nauczyciel123, student/student123</p>
+</div>
+</body>
+</html>

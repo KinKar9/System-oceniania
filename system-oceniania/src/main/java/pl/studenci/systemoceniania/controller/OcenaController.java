@@ -5,10 +5,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import pl.studenci.systemoceniania.entity.OcenaCzastkowa;
+import pl.studenci.systemoceniania.entity.Ocena;
+import pl.studenci.systemoceniania.entity.Zapisy;
+import pl.studenci.systemoceniania.service.OcenaService;
 import pl.studenci.systemoceniania.service.StudentService;
 import pl.studenci.systemoceniania.service.PrzedmiotService;
-import pl.studenci.systemoceniania.repository.OcenaCzastkowaRepository;
+import pl.studenci.systemoceniania.service.ZapisyService;
+import pl.studenci.systemoceniania.repository.SlownikOcenRepository;
 
 import java.util.List;
 
@@ -16,54 +19,69 @@ import java.util.List;
 @RequestMapping("/oceny")
 public class OcenaController {
 
-    private final OcenaCzastkowaRepository ocenaRepository;
+    private final OcenaService ocenaService;
     private final StudentService studentService;
     private final PrzedmiotService przedmiotService;
+    private final SlownikOcenRepository slownikOcenRepository;
+    private final ZapisyService zapisyService;
 
-    public OcenaController(OcenaCzastkowaRepository ocenaRepository,
+    public OcenaController(OcenaService ocenaService,
                            StudentService studentService,
-                           PrzedmiotService przedmiotService) {
-        this.ocenaRepository = ocenaRepository;
+                           PrzedmiotService przedmiotService,
+                           SlownikOcenRepository slownikOcenRepository,
+                           ZapisyService zapisyService) {
+        this.ocenaService = ocenaService;
         this.studentService = studentService;
         this.przedmiotService = przedmiotService;
+        this.slownikOcenRepository = slownikOcenRepository;
+        this.zapisyService = zapisyService;
     }
 
     @GetMapping
-    public String list(@RequestParam(required = false) Long studentId, Model model) {
-        List<OcenaCzastkowa> oceny;
-        if (studentId != null) {
-            oceny = ocenaRepository.findByStudentId(studentId);
-        } else {
-            oceny = ocenaRepository.findAll();
-        }
-
+    public String list(@RequestParam(required = false) Long studentId,
+                       @RequestParam(required = false) Long przedmiotId,
+                       @RequestParam(required = false) Long typId,
+                       @RequestParam(defaultValue = "data") String sortBy,
+                       @RequestParam(defaultValue = "desc") String order,
+                       Model model) {
+        List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
         model.addAttribute("oceny", oceny);
         model.addAttribute("students", studentService.findAll());
+        model.addAttribute("przedmioty", przedmiotService.findAll());
+        model.addAttribute("typyOcen", slownikOcenRepository.findAll());
         return "oceny/lista";
     }
 
     @GetMapping("/nowa")
     public String form(Model model) {
-        model.addAttribute("ocena", new OcenaCzastkowa());
-        model.addAttribute("students", studentService.findAll());
-        model.addAttribute("przedmioty", przedmiotService.findAll());
+        Ocena ocena = new Ocena();
+        ocena.setZapis(new Zapisy());
+        model.addAttribute("ocena", ocena);
+        model.addAttribute("wszystkieZapisy", zapisyService.findAll()); // lista do wyboru
+        model.addAttribute("typyOcen", slownikOcenRepository.findAll());
         return "oceny/formularz";
     }
 
     @PostMapping("/zapisz")
-    public String save(@Valid @ModelAttribute("ocena") OcenaCzastkowa ocena, BindingResult bindingResult, Model model) {
+    public String save(@Valid @ModelAttribute("ocena") Ocena ocena,
+                       BindingResult bindingResult,
+                       Model model) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("students", studentService.findAll());
-            model.addAttribute("przedmioty", przedmiotService.findAll());
+            model.addAttribute("wszystkieZapisy", zapisyService.findAll());
+            model.addAttribute("typyOcen", slownikOcenRepository.findAll());
             return "oceny/formularz";
         }
-        ocenaRepository.save(ocena);
+        Long zapisId = ocena.getZapis().getId();
+        Zapisy zapis = zapisyService.findById(zapisId);
+        ocena.setZapis(zapis);
+
+        ocenaService.save(ocena);
         return "redirect:/oceny";
     }
 
     @GetMapping("/usun/{id}")
     public String delete(@PathVariable Long id) {
-        ocenaRepository.deleteById(id);
+        ocenaService.delete(id);
         return "redirect:/oceny";
     }
 }

@@ -1,30 +1,24 @@
 CREATE OR REPLACE TRIGGER trg_audyt_ocen
-AFTER INSERT OR UPDATE OR DELETE ON Oceny_Czastkowe
+AFTER INSERT OR UPDATE OR DELETE ON OCENY
 FOR EACH ROW
 DECLARE
     v_operacja VARCHAR2(20);
+    v_user VARCHAR2(50) := COALESCE(USER, 'SYSTEM');
 BEGIN
-    --rozpoznajemy, jaka operacja została wykonana
     IF INSERTING THEN
         v_operacja := 'INSERT';
-        
-        INSERT INTO Logi_Ocen (id_oceny_czastkowej, stara_ocena, nowa_ocena, operacja)
-        VALUES (:NEW.id_oceny_czastkowej, NULL, :NEW.ocena, v_operacja);
-        
+        INSERT INTO HISTORIA_OCEN (id_oceny, stara_wartosc, nowa_wartosc, operacja, uzytkownik)
+        VALUES (:NEW.id_oceny, NULL, :NEW.wartosc, v_operacja, v_user);
     ELSIF UPDATING THEN
         v_operacja := 'UPDATE';
-        
-        --zapisujemy tylko wtedy, kiedy ocena faktycznie się zmieniła
-        IF :OLD.ocena != :NEW.ocena THEN
-            INSERT INTO Logi_Ocen (id_oceny_czastkowej, stara_ocena, nowa_ocena, operacja)
-            VALUES (:NEW.id_oceny_czastkowej, :OLD.ocena, :NEW.ocena, v_operacja);
+        IF :OLD.wartosc != :NEW.wartosc THEN
+            INSERT INTO HISTORIA_OCEN (id_oceny, stara_wartosc, nowa_wartosc, operacja, uzytkownik)
+            VALUES (:NEW.id_oceny, :OLD.wartosc, :NEW.wartosc, v_operacja, v_user);
         END IF;
-        
     ELSIF DELETING THEN
         v_operacja := 'DELETE';
-        
-        INSERT INTO Logi_Ocen (id_oceny_czastkowej, stara_ocena, nowa_ocena, operacja)
-        VALUES (:OLD.id_oceny_czastkowej, :OLD.ocena, NULL, v_operacja);
+        INSERT INTO HISTORIA_OCEN (id_oceny, stara_wartosc, nowa_wartosc, operacja, uzytkownik)
+        VALUES (:OLD.id_oceny, :OLD.wartosc, NULL, v_operacja, v_user);
     END IF;
 END;
 /

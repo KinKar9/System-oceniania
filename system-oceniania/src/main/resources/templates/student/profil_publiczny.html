@@ -46,10 +46,10 @@
             </thead>
             <tbody>
             <tr th:each="o : ${oceny}">
-                <td th:text="${o.przedmiot != null ? o.przedmiot.nazwa : 'Brak danych'}">Matematyka</td>
+                <td th:text="${o.zapis.grupa.przedmiot.nazwa}">Brak danych</td>
                 <td th:text="${o.wartosc}" style="font-weight: bold;">5.0</td>
-                <td th:text="${o.waga}">1</td>
-                <td th:text="${o.opis}">Kolokwium zaliczeniowe</td>
+                <td th:text="${o.typ.waga}">1</td>
+                <td th:text="${o.komentarz}">Kolokwium zaliczeniowe</td>
             </tr>
             </tbody>
         </table>

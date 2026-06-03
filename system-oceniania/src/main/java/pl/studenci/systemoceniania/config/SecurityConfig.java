@@ -11,18 +11,10 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
-
-    public SecurityConfig(CustomLogoutSuccessHandler customLogoutSuccessHandler) {
-        this.customLogoutSuccessHandler = customLogoutSuccessHandler;
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -56,7 +48,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/login").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/login", "/public/**").permitAll()
+                        .requestMatchers("/pracownicy/**").hasAnyRole("ADMIN", "PRACOWNIK")
+                        .requestMatchers("/sale/**").hasAnyRole("ADMIN", "PRACOWNIK")
+                        .requestMatchers("/przedmioty/**").hasAnyRole("ADMIN", "PRACOWNIK")
+                        .requestMatchers("/oceny/**").hasAnyRole("ADMIN", "PRACOWNIK")
+                        .requestMatchers("/kierunki/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -64,14 +61,10 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/pracownicy", true)
                         .permitAll()
                 )
-                .logout(logout -> logout.permitAll());
-
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll()
+                );
         return http.build();
-    }
-
-    @GetMapping("/test")
-    @ResponseBody
-    public String testWidoku() {
-        return "<h1>Hurra! Serwer, Security i Kontroler działają bez błędu 404!</h1>";
     }
 }

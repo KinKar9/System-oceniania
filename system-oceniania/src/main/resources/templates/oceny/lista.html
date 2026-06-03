@@ -15,41 +15,55 @@
                 <option value="">-- Wszyscy studenci --</option>
                 <option th:each="s : ${students}" th:value="${s.id}" th:text="${s.imie + ' ' + s.nazwisko}"></option>
             </select>
+
+            <label for="filterPrzedmiot">Przedmiot:</label>
+            <select id="filterPrzedmiot" name="przedmiotId">
+                <option value="">-- Wszystkie przedmioty --</option>
+                <option th:each="p : ${przedmioty}" th:value="${p.id}" th:text="${p.nazwa}"></option>
+            </select>
+
+            <label for="filterTyp">Typ oceny:</label>
+            <select id="filterTyp" name="typId">
+                <option value="">-- Wszystkie typy --</option>
+                <option th:each="t : ${typyOcen}" th:value="${t.id}" th:text="${t.nazwa}"></option>
+            </select>
+
             <button type="submit">Filtruj</button>
-            <a href="/oceny" th:if="${param.studentId != null}">Wyczyść filtr</a>
+            <a href="/oceny">Wyczyść filtry</a>
         </form>
     </section>
 
     <br/>
     <div style="margin-bottom: 20px;">
-        <a href="/oceny/nowa" role="button" aria-label="Wystaw nową ocenę">➕ Wystaw nową ocenę</a>
+        <a href="/oceny/nowa" role="button">➕ Wystaw nową ocenę</a>
     </div>
 
     <section aria-label="Lista ocen">
         <table border="1">
             <thead>
             <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Student</th>
-                <th scope="col">Przedmiot</th>
-                <th scope="col">Ocena</th>
-                <th scope="col">Waga</th>
-                <th scope="col">Opis</th>
-                <th scope="col">Akcje</th>
+                <th>ID</th>
+                <th>Student</th>
+                <th>Przedmiot</th>
+                <th>Typ oceny</th>
+                <th>Wartość</th>
+                <th>Data wystawienia</th>
+                <th>Komentarz</th>
+                <th>Akcje</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="o : ${oceny}">
-                <td th:text="${o.id}">1</td>
-                <td th:text="${o.student.imie + ' ' + o.student.nazwisko}">Jan Kowalski</td>
-                <td th:text="${o.przedmiot != null ? o.przedmiot.nazwa : 'Brak'}">Matematyka</td>
-                <td th:text="${o.wartosc}" style="font-weight: bold;">4.5</td>
-                <td th:text="${o.waga}">2</td>
-                <td th:text="${o.opis}">Kolokwium 1</td>
+                <td th:text="${o.id}"></td>
+                <td th:text="${o.zapis.student.imie + ' ' + o.zapis.student.nazwisko}"></td>
+                <td th:text="${o.zapis.grupa.przedmiot.nazwa}"></td>
+                <td th:text="${o.typ.nazwa}"></td>
+                <td th:text="${o.wartosc}"></td>
+                <td th:text="${o.dataWystawienia}"></td>
+                <td th:text="${o.komentarz}"></td>
                 <td>
                     <a th:href="@{/oceny/usun/{id}(id=${o.id})}"
-                       th:aria-label="'Usuń ocenę o ID ' + ${o.id}"
-                       onclick="return confirm('Usunąć tę ocenę?')">❌ Usuń</a>
+                       onclick="return confirm('Usunąć ocenę?')">Usuń</a>
                 </td>
             </tr>
             </tbody>
