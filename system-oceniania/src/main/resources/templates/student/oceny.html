@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Moje oceny</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .container { max-width: 1000px; margin: auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .srednia { background: #e8f0fe; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .btn { background: #0066cc; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; border-radius: 4px; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Moje oceny</h1>
+    <div class="srednia">
+        <strong>Średnia ocen (ważona):</strong> <span th:text="${srednia}">0.00</span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(oceny)}">
+        <p>Brak wystawionych ocen.</p>
+    </div>
+
+    <table th:if="${!#lists.isEmpty(oceny)}">
+        <thead>
+        <tr>
+            <th>Przedmiot</th>
+            <th>Typ oceny</th>
+            <th>Wartość</th>
+            <th>Data wystawienia</th>
+            <th>Komentarz</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="o : ${oceny}">
+            <td th:text="${o.zapis.grupa.przedmiot.nazwa}">-</td>
+            <td th:text="${o.typ.nazwa}">-</td>
+            <td th:text="${o.wartosc}">-</td>
+            <td th:text="${o.dataWystawienia}">-</td>
+            <td th:text="${o.komentarz}">-</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="/student/dashboard" class="btn">Powrót do panelu</a>
+</div>
+</body>
+</html>

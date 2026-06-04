@@ -14,13 +14,20 @@ public class OcenaService {
     private final ZapisyRepository zapisyRepository;
     private final SlownikOcenRepository slownikOcenRepository;
 
-    public OcenaService(OcenaRepository ocenaRepository, ZapisyRepository zapisyRepository, SlownikOcenRepository slownikOcenRepository) {
+    public OcenaService(OcenaRepository ocenaRepository,
+                        ZapisyRepository zapisyRepository,
+                        SlownikOcenRepository slownikOcenRepository) {
         this.ocenaRepository = ocenaRepository;
         this.zapisyRepository = zapisyRepository;
         this.slownikOcenRepository = slownikOcenRepository;
     }
 
     public List<Ocena> findAll() { return ocenaRepository.findAll(); }
+
+    // NOWA metoda – zwraca oceny studenta z załadowanymi wszystkimi zależnościami
+    public List<Ocena> getOcenyStudenta(Long studentId) {
+        return ocenaRepository.findOcenyStudentaWithDetails(studentId);
+    }
 
     public Ocena save(Ocena ocena) {
         // Walidacja zakresu i kroku 0.5
@@ -35,7 +42,6 @@ public class OcenaService {
         SlownikOcen typ = slownikOcenRepository.findById(ocena.getTyp().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Typ oceny nie istnieje"));
 
-        // Sprawdzenie unikalności typu oceny dla zapisu – teraz przez bazę danych
         if (ocenaRepository.existsByZapisIdAndTypId(zapis.getId(), typ.getId())) {
             throw new IllegalArgumentException("Ocena tego typu już została wystawiona dla tego zapisu");
         }
@@ -49,7 +55,6 @@ public class OcenaService {
     public void delete(Long id) { ocenaRepository.deleteById(id); }
 
     public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId, String sortBy, String order) {
-        // Domyślne wartości sortowania
         if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
         if (order == null || order.isEmpty()) order = "desc";
         return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, sortBy, order);

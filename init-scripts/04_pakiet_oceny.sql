@@ -10,7 +10,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_OCENY AS
     FUNCTION SREDNIA_STUDENTA(p_id_studenta NUMBER) RETURN NUMBER IS
         v_srednia NUMBER;
     BEGIN
-        SELECT SUM(o.wartosc * sw.waga) / SUM(sw.waga)
+        SELECT SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0)
         INTO v_srednia
         FROM OCENY o
         JOIN ZAPISY z ON o.id_zapisu = z.id_zapisu

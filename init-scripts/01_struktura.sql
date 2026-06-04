@@ -86,12 +86,12 @@ CREATE TABLE Zapisy (
     data_zapisu DATE DEFAULT SYSDATE,
     status VARCHAR2(20) DEFAULT 'Aktywny',
     czy_zaliczono CHAR(1) DEFAULT 'N',          
-    data_zakonczenia DATE,                      
+    data_zakonczenia DATE,
+    semestr VARCHAR2(20),   -- ← DODANA KOLUMNA
     CONSTRAINT pk_zapisy PRIMARY KEY (id_zapisu),
     CONSTRAINT fk_zapisy_student FOREIGN KEY (id_studenta) REFERENCES Studenci(id_studenta),
     CONSTRAINT fk_zapisy_grupa FOREIGN KEY (id_grupy) REFERENCES Grupy(id_grupy),
     CONSTRAINT uq_student_grupa UNIQUE (id_studenta, id_grupy)
-);
 );
 
 CREATE TABLE Oceny (

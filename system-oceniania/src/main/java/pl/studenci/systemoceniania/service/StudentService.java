@@ -3,7 +3,6 @@ package pl.studenci.systemoceniania.service;
 import org.springframework.stereotype.Service;
 import pl.studenci.systemoceniania.entity.Student;
 import pl.studenci.systemoceniania.repository.StudentRepository;
-
 import java.util.List;
 
 @Service
@@ -35,5 +34,12 @@ public class StudentService {
         return repository.findBySecureToken(token)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Nieprawidłowy lub wygasły token dostępu."));
+    }
+
+    public Student findByEmail(String email) {
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Nie znaleziono studenta z emailem: " + email));
     }
 }

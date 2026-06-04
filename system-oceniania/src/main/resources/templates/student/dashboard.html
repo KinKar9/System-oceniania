@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Studenta</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .container { max-width: 800px; margin: auto; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .btn { background: #0066cc; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Witaj, <span th:text="${username}">student</span>!</h1>
+    <div class="card">
+        <h2>Twoje oceny</h2>
+        <p>Podgląd ocen – dostępny tylko dla Ciebie.</p>
+        <a th:href="@{/student/moje-oceny}" class="btn">Zobacz oceny</a>
+    </div>
+    <div class="card">
+        <h2>Profil</h2>
+        <p>Twoje dane osobowe.</p>
+        <a th:href="@{/student/profil}" class="btn">Przejdź do profilu</a>
+    </div>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn" style="background:#666;">Wyloguj</button>
+    </form>
+</div>
+</body>
+</html>

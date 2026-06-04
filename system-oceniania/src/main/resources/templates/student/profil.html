@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mój profil</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .container { max-width: 600px; margin: auto; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1.5rem; }
+        .field { margin-bottom: 1rem; }
+        .label { font-weight: bold; display: inline-block; width: 150px; }
+        .btn { background: #0066cc; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; border-radius: 4px; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Profil studenta</h1>
+    <div class="card">
+        <div class="field"><span class="label">Imię i nazwisko:</span> <span th:text="${student.imie + ' ' + student.nazwisko}">-</span></div>
+        <div class="field"><span class="label">Numer indeksu:</span> <span th:text="${student.nrIndeksu}">-</span></div>
+        <div class="field"><span class="label">Email:</span> <span th:text="${student.email}">-</span></div>
+        <div class="field"><span class="label">Data urodzenia:</span> <span th:text="${student.dataUrodzenia}">-</span></div>
+        <div class="field"><span class="label">PESEL:</span> <span th:text="${student.pesel != null ? student.pesel : 'brak'}">-</span></div>
+    </div>
+    <a href="/student/dashboard" class="btn">Powrót do panelu</a>
+</div>
+</body>
+</html>

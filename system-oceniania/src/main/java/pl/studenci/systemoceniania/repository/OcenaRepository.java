@@ -11,7 +11,10 @@ public interface OcenaRepository extends JpaRepository<Ocena, Long> {
     List<Ocena> findByZapisGrupaPrzedmiotId(Long przedmiotId);
     List<Ocena> findByZapisId(Long zapisId);
 
-    // Filtrowanie i sortowanie dynamiczne za pomocą @Query
+    @Query("SELECT o FROM Ocena o JOIN FETCH o.zapis z JOIN FETCH z.student JOIN FETCH z.grupa g JOIN FETCH g.przedmiot JOIN FETCH o.typ WHERE z.student.id = :studentId")
+    List<Ocena> findOcenyStudentaWithDetails(@Param("studentId") Long studentId);
+
+    // Filtrowanie i sortowanie dynamiczne
     @Query("SELECT o FROM Ocena o WHERE " +
             "(:studentId IS NULL OR o.zapis.student.id = :studentId) AND " +
             "(:przedmiotId IS NULL OR o.zapis.grupa.przedmiot.id = :przedmiotId) AND " +
@@ -27,6 +30,5 @@ public interface OcenaRepository extends JpaRepository<Ocena, Long> {
                               @Param("sortBy") String sortBy,
                               @Param("order") String order);
 
-    // Sprawdzenie czy istnieje już ocena danego typu dla zapisu
     boolean existsByZapisIdAndTypId(Long zapisId, Long typId);
 }

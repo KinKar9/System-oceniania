@@ -10,7 +10,7 @@ services:
       - APP_USER_PASSWORD=Projekt2026Haslo
     volumes:
       - oracle-data:/opt/oracle/oradata
-      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./init-scripts:/opt/oracle/scripts/startup
 
 volumes:
   oracle-data:
