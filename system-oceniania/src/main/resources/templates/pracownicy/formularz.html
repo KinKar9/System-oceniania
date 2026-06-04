@@ -35,6 +35,11 @@
                 <input type="text" id="tytulNaukowy" th:field="*{tytulNaukowy}" />
                 <span th:if="${#fields.hasErrors('tytulNaukowy')}" th:errors="*{tytulNaukowy}" style="color: red;" role="alert">Błąd tytułu</span>
             </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" th:field="*{email}" required />
+                <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color: red;"></span>
+            </div>
 
             <br/>
 

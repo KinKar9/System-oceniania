@@ -39,6 +39,7 @@ public class PracownikController {
     @PostMapping("/zapisz")
     public String save(@Valid @ModelAttribute("pracownik") Pracownik p, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
+            bindingResult.getAllErrors().forEach(error -> System.out.println(error.toString()));
             return "pracownicy/formularz";
         }
         service.save(p);
