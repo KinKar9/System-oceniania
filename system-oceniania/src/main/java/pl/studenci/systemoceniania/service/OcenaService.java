@@ -59,4 +59,8 @@ public class OcenaService {
         if (order == null || order.isEmpty()) order = "desc";
         return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
     }
+
+    public Ocena findById(Long id) {
+        return ocenaRepository.findById(id).orElse(null);
+    }
 }
