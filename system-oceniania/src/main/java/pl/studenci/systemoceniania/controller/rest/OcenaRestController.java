@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import pl.studenci.systemoceniania.entity.Ocena;
 import pl.studenci.systemoceniania.service.OcenaService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,9 +25,10 @@ public class OcenaRestController {
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Long przedmiotId,
             @RequestParam(required = false) Long typId,
+            @RequestParam(required = false) LocalDate dataOd,   // DODAJ
             @RequestParam(defaultValue = "data") String sortBy,
             @RequestParam(defaultValue = "desc") String order) {
-        return ocenaService.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
+        return ocenaService.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
     }
 
     @GetMapping("/{id}")
