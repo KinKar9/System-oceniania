@@ -24,7 +24,11 @@ public class OcenaService {
 
     public List<Ocena> findAll() { return ocenaRepository.findAll(); }
 
-    // NOWA metoda – zwraca oceny studenta z załadowanymi wszystkimi zależnościami
+    public List<Ocena> findAllSortedByPopularnoscPrzedmiotu() {
+        return ocenaRepository.findAllSortedByPopularnoscPrzedmiotu();
+    }
+
+    // zwraca oceny studenta z załadowanymi wszystkimi zależnościami
     public List<Ocena> getOcenyStudenta(Long studentId) {
         return ocenaRepository.findOcenyStudentaWithDetails(studentId);
     }
@@ -54,13 +58,15 @@ public class OcenaService {
 
     public void delete(Long id) { ocenaRepository.deleteById(id); }
 
-    public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId, String sortBy, String order) {
+    public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId,
+                                     LocalDate dataOd, String sortBy, String order) {
         if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
         if (order == null || order.isEmpty()) order = "desc";
-        return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
+        return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
     }
 
     public Ocena findById(Long id) {
         return ocenaRepository.findById(id).orElse(null);
     }
+
 }

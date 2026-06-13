@@ -28,6 +28,11 @@
                 <option th:each="t : ${typyOcen}" th:value="${t.id}" th:text="${t.nazwa}"></option>
             </select>
 
+            <label for="dataOd">Data od (od aktualnej):</label>
+            <input type="date" id="dataOd" name="dataOd" th:value="${param.dataOd}" />
+
+            <a href="/oceny/popularnosc" class="btn">Sortuj według popularności przedmiotu</a>
+
             <button type="submit">Filtruj</button>
             <a href="/oceny">Wyczyść filtry</a>
         </form>

@@ -1,5 +1,7 @@
 package pl.studenci.systemoceniania.controller;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +15,7 @@ import pl.studenci.systemoceniania.service.PrzedmiotService;
 import pl.studenci.systemoceniania.service.ZapisyService;
 import pl.studenci.systemoceniania.repository.SlownikOcenRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -41,10 +44,29 @@ public class OcenaController {
     public String list(@RequestParam(required = false) Long studentId,
                        @RequestParam(required = false) Long przedmiotId,
                        @RequestParam(required = false) Long typId,
-                       @RequestParam(defaultValue = "data") String sortBy,
-                       @RequestParam(defaultValue = "desc") String order,
+                       @RequestParam(required = false) LocalDate dataOd,
+                       @RequestParam(required = false) String sortBy,
+                       @RequestParam(required = false) String order,
+                       @CookieValue(name = "ocenySort", required = false) String cookieSort,
+                       HttpServletResponse response,
                        Model model) {
-        List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
+        // Jeśli sortBy nie podane w żądaniu, użyj z ciasteczka
+        if (sortBy == null && cookieSort != null) {
+            String[] parts = cookieSort.split("\\|");
+            if (parts.length == 2) {
+                sortBy = parts[0];
+                order = parts[1];
+            }
+        }
+        if (sortBy == null) sortBy = "data";
+        if (order == null) order = "desc";
+        // Zapisz do ciasteczka (ważne 30 dni)
+        Cookie cookie = new Cookie("ocenySort", sortBy + "|" + order);
+        cookie.setMaxAge(60*60*24*30);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
         model.addAttribute("oceny", oceny);
         model.addAttribute("students", studentService.findAll());
         model.addAttribute("przedmioty", przedmiotService.findAll());
@@ -83,5 +105,12 @@ public class OcenaController {
     public String delete(@PathVariable Long id) {
         ocenaService.delete(id);
         return "redirect:/oceny";
+    }
+
+    @GetMapping("/popularnosc")
+    public String listByPopularnosc(Model model) {
+        List<Ocena> oceny = ocenaService.findAllSortedByPopularnoscPrzedmiotu();
+        model.addAttribute("oceny", oceny);
+        return "oceny/lista";
     }
 }
