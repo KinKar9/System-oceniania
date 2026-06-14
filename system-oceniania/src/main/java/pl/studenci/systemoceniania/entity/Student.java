@@ -2,56 +2,83 @@ package pl.studenci.systemoceniania.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "STUDENCI")
 public class Student {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_STUDENTA")
+    @Column(name = "ID_STUDENTA", updatable = false)
     private Long id;
 
-    @NotBlank
-    @Size(max = 50)
-    @Column(name = "IMIE", nullable = false)
+    @NotBlank(message = "Imię jest wymagane")
+    @Size(max = 50, message = "Imię może mieć maksymalnie 50 znaków")
+    @Column(name = "IMIE", nullable = false, length = 50)
     private String imie;
 
-    @NotBlank
-    @Size(max = 100)
-    @Column(name = "NAZWISKO", nullable = false)
+    @NotBlank(message = "Nazwisko jest wymagane")
+    @Size(max = 100, message = "Nazwisko może mieć maksymalnie 100 znaków")
+    @Column(name = "NAZWISKO", nullable = false, length = 100)
     private String nazwisko;
 
-    @NotBlank
-    @Size(min = 6, max = 10)
-    @Column(name = "NR_INDEKSU", nullable = false, unique = true)
+    @NotBlank(message = "Numer indeksu jest wymagany")
+    @Size(min = 6, max = 10, message = "Numer indeksu musi mieć od 6 do 10 znaków")
+    @Column(name = "NR_INDEKSU", nullable = false, unique = true, length = 10)
     private String nrIndeksu;
 
-    @NotBlank
-    @Email
-    @Size(max = 100)
-    @Column(name = "EMAIL", nullable = false, unique = true)
+    @NotBlank(message = "Email jest wymagany")
+    @Email(message = "Nieprawidłowy format email")
+    @Size(max = 100, message = "Email może mieć maksymalnie 100 znaków")
+    @Column(name = "EMAIL", nullable = false, unique = true, length = 100)
     private String email;
 
-    @NotNull
-    @Past
+    @NotNull(message = "Data urodzenia jest wymagana")
+    @Past(message = "Data urodzenia musi być w przeszłości")
     @Column(name = "DATA_URODZENIA", nullable = false)
     private LocalDate dataUrodzenia;
 
-    @Size(min = 11, max = 11)
-    @Column(name = "PESEL", unique = true)
+    @Pattern(regexp = "^[0-9]{11}$", message = "PESEL musi składać się z 11 cyfr")
+    @Column(name = "PESEL", unique = true, length = 11)
     private String pesel;
 
-    @Column(name = "SECURE_TOKEN", unique = true)
+    // Token powinien być haszowany przed zapisem – przechowujemy hash
+    @Size(max = 255, message = "Token może mieć maksymalnie 255 znaków")
+    @Column(name = "SECURE_TOKEN", unique = true, length = 255)
     private String secureToken;
 
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL)
+    @CreationTimestamp
+    @Column(name = "DATA_UTWORZENIA", updatable = false)
+    private LocalDateTime dataUtworzenia;
+
+    @UpdateTimestamp
+    @Column(name = "DATA_AKTUALIZACJI")
+    private LocalDateTime dataAktualizacji;
+
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Zapisy> zapisy = new ArrayList<>();
 
     public Student() {}
-    // gettery i settery (wszystkie)
+
+    // Metody pomocnicze do zarządzania relacją z zapisami
+    public void addZapis(Zapisy zapis) {
+        zapisy.add(zapis);
+        zapis.setStudent(this);
+    }
+
+    public void removeZapis(Zapisy zapis) {
+        zapisy.remove(zapis);
+        zapis.setStudent(null);
+    }
+
+    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getImie() { return imie; }
@@ -68,6 +95,35 @@ public class Student {
     public void setPesel(String pesel) { this.pesel = pesel; }
     public String getSecureToken() { return secureToken; }
     public void setSecureToken(String secureToken) { this.secureToken = secureToken; }
+    public LocalDateTime getDataUtworzenia() { return dataUtworzenia; }
+    public void setDataUtworzenia(LocalDateTime dataUtworzenia) { this.dataUtworzenia = dataUtworzenia; }
+    public LocalDateTime getDataAktualizacji() { return dataAktualizacji; }
+    public void setDataAktualizacji(LocalDateTime dataAktualizacji) { this.dataAktualizacji = dataAktualizacji; }
     public List<Zapisy> getZapisy() { return zapisy; }
     public void setZapisy(List<Zapisy> zapisy) { this.zapisy = zapisy; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Student)) return false;
+        Student student = (Student) o;
+        return id != null && Objects.equals(id, student.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "id=" + id +
+                ", imie='" + imie + '\'' +
+                ", nazwisko='" + nazwisko + '\'' +
+                ", nrIndeksu='" + nrIndeksu + '\'' +
+                ", email='" + email + '\'' +
+                ", dataUrodzenia=" + dataUrodzenia +
+                '}';
+    }
 }

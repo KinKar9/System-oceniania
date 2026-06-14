@@ -1,23 +1,20 @@
 package pl.studenci.systemoceniania.config;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
 
@@ -25,37 +22,21 @@ import java.util.Set;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+    private final UserDetailsService userDetailsService;
+
+    public SecurityConfig(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password("admin123")
-                .roles("ADMIN")
-                .build();
-
-        UserDetails pracownik = User.builder()
-                .username("nauczyciel")
-                .password("nauczyciel123")
-                .roles("PRACOWNIK")
-                .build();
-
-        UserDetails student = User.builder()
-                .username("student")
-                .password("student123")
-                .roles("STUDENT")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, pracownik, student);
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .userDetailsService(userDetailsService)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/login", "/public/**", "/api/**").permitAll()
                         .requestMatchers("/pracownicy/**").hasAnyRole("ADMIN", "PRACOWNIK")
@@ -63,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/przedmioty/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/oceny/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/kierunki/**").hasAnyRole("ADMIN", "PRACOWNIK")
+                        // Dodaj dostęp dla studenta do jego panelu
                         .requestMatchers("/student/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )

@@ -2,44 +2,100 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Oceniania - Przedmioty</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        /* Dodatkowe style dla responsywności i komunikatów */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .empty-row td {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            font-size: inherit;
+        }
+        .btn-delete:hover {
+            color: #c0392b;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .add-button {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .back-link {
+            margin-top: 20px;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
 <main>
     <h1 id="main-heading">Zarządzanie Przedmiotami</h1>
 
-    <div style="margin-bottom: 20px;">
-        <a href="/przedmioty/nowy" role="button" aria-label="Przejdź do formularza dodawania nowego przedmiotu">➕ Dodaj nowy przedmiot</a>
+    <!-- Link dodawania – usunięto role="button" i styl inline -->
+    <div class="add-button">
+        <a th:href="@{/przedmioty/nowy}" aria-label="Przejdź do formularza dodawania nowego przedmiotu">➕ Dodaj nowy przedmiot</a>
     </div>
 
     <section aria-label="Tabela przedmiotów">
         <h2>Lista przedmiotów</h2>
-        <table border="1">
-            <thead>
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Kod przedmiotu</th>
-                <th scope="col">Nazwa</th>
-                <th scope="col">Akcje</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="p : ${przedmioty}">
-                <td th:text="${p.id}">1</td>
-                <td th:text="${p.kodPrzedmiotu}">INF-01</td>
-                <td th:text="${p.nazwa}">Bazy Danych</td>
-                <td>
-                    <a th:href="@{/przedmioty/edycja/{id}(id=${p.id})}"
-                       th:aria-label="'Edytuj przedmiot ' + ${p.nazwa}">Edytuj</a> |
-
-                    <a th:href="@{/przedmioty/usun/{id}(id=${p.id})}"
-                       th:aria-label="'Usuń przedmiot ' + ${p.nazwa}"
-                       onclick="return confirm('Czy na pewno chcesz usunąć ten przedmiot?')">Usuń</a>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table border="1">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Kod przedmiotu</th>
+                    <th scope="col">Nazwa</th>
+                    <th scope="col">Akcje</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Obsługa pustej listy -->
+                <tr th:if="${#lists.isEmpty(przedmioty)}" class="empty-row">
+                    <td colspan="4">Brak przedmiotów w systemie</td>
+                </tr>
+                <tr th:each="p : ${przedmioty}" th:unless="${#lists.isEmpty(przedmioty)}">
+                    <td th:text="${p.id}">1</td>
+                    <td th:text="${p.kodPrzedmiotu}">INF-01</td>
+                    <td th:text="${p.nazwa}">Bazy Danych</td>
+                    <td class="action-buttons">
+                        <a th:href="@{/przedmioty/edycja/{id}(id=${p.id})}"
+                           th:aria-label="'Edytuj przedmiot ' + ${p.nazwa}">Edytuj</a>
+                        <!-- Formularz usuwania z metodą POST i tokenem CSRF -->
+                        <form th:action="@{/przedmioty/usun/{id}(id=${p.id})}" method="post" style="display:inline;">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn-delete"
+                                    th:aria-label="'Usuń przedmiot ' + ${p.nazwa}"
+                                    onclick="return confirm('Czy na pewno chcesz usunąć ten przedmiot?')">
+                                Usuń
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
+    <a th:href="@{/dashboard}" class="back-link" aria-label="Powrót do panelu głównego">← Powrót do panelu</a>
 </main>
 </body>
 </html>

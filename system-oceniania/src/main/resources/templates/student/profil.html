@@ -2,27 +2,97 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mój profil</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        .container { max-width: 600px; margin: auto; }
-        .card { border: 1px solid #ccc; border-radius: 8px; padding: 1.5rem; }
-        .field { margin-bottom: 1rem; }
-        .label { font-weight: bold; display: inline-block; width: 150px; }
-        .btn { background: #0066cc; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; border-radius: 4px; margin-top: 1rem; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f4f7fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .field {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+        .label {
+            font-weight: bold;
+            width: 150px;
+            flex-shrink: 0;
+        }
+        .value {
+            flex: 1;
+        }
+        .btn {
+            background: #0066cc;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0055aa;
+        }
+        /* Responsywność – na małych ekranach etykiety są nad wartościami */
+        @media (max-width: 480px) {
+            .field {
+                flex-direction: column;
+            }
+            .label {
+                width: auto;
+                margin-bottom: 0.25rem;
+            }
+            .container {
+                margin: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>Profil studenta</h1>
     <div class="card">
-        <div class="field"><span class="label">Imię i nazwisko:</span> <span th:text="${student.imie + ' ' + student.nazwisko}">-</span></div>
-        <div class="field"><span class="label">Numer indeksu:</span> <span th:text="${student.nrIndeksu}">-</span></div>
-        <div class="field"><span class="label">Email:</span> <span th:text="${student.email}">-</span></div>
-        <div class="field"><span class="label">Data urodzenia:</span> <span th:text="${student.dataUrodzenia}">-</span></div>
-        <div class="field"><span class="label">PESEL:</span> <span th:text="${student.pesel != null ? student.pesel : 'brak'}">-</span></div>
+        <!-- Bezpieczne łączenie imienia i nazwiska – unikamy "null" -->
+        <div class="field">
+            <span class="label">Imię i nazwisko:</span>
+            <span class="value" th:text="${student.imie != null ? student.imie : ''} + ' ' + (student.nazwisko != null ? student.nazwisko : '')">-</span>
+        </div>
+        <div class="field">
+            <span class="label">Numer indeksu:</span>
+            <span class="value" th:text="${student.nrIndeksu}">-</span>
+        </div>
+        <div class="field">
+            <span class="label">Email:</span>
+            <span class="value" th:text="${student.email}">-</span>
+        </div>
+        <div class="field">
+            <span class="label">Data urodzenia:</span>
+            <!-- Formatowanie daty dd-MM-yyyy -->
+            <span class="value" th:text="${#temporals.format(student.dataUrodzenia, 'dd-MM-yyyy')}">-</span>
+        </div>
+        <div class="field">
+            <span class="label">PESEL:</span>
+            <span class="value" th:text="${student.pesel != null ? '***' + #strings.substring(student.pesel, 7) : 'brak'}">-</span>
+        </div>
     </div>
-    <a href="/student/dashboard" class="btn">Powrót do panelu</a>
+    <!-- Dynamiczny link powrotu do dashboardu -->
+    <a th:href="@{/student/dashboard}" class="btn">Powrót do panelu</a>
 </div>
 </body>
 </html>

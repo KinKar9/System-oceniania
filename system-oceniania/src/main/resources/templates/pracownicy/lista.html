@@ -2,46 +2,105 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Oceniania - Pracownicy</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    /* Dodatkowe style dla responsywności i komunikatów */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .empty-row td {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+      color: #666;
+    }
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      font-size: inherit;
+    }
+    .btn-delete:hover {
+      color: #c0392b;
+    }
+    .flash-message {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .flash-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .flash-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
 </head>
 <body>
 <main>
   <h1 id="main-heading">Zarządzanie Pracownikami</h1>
 
+  <!-- Miejsce na komunikaty flash (sukces/błąd) -->
+  <div th:if="${flashMessage}" class="flash-message" th:classappend="${flashType == 'success' ? 'flash-success' : 'flash-error'}" th:text="${flashMessage}"></div>
+
   <div style="margin-bottom: 20px;">
-    <a href="/pracownicy/nowy" role="button" aria-label="Przejdź do formularza dodawania nowego pracownika">➕ Dodaj nowego pracownika</a>
+    <a th:href="@{/pracownicy/nowy}" class="btn">➕ Dodaj nowego pracownika</a>
   </div>
 
   <section aria-label="Lista zarejestrowanych pracowników">
     <h2>Zarejestrowani pracownicy</h2>
-    <table border="1">
-      <thead>
-      <tr>
-        <th scope="col">ID</th>
-        <th scope="col">Tytuł naukowy</th>
-        <th scope="col">Imię</th>
-        <th scope="col">Nazwisko</th>
-        <th scope="col">Akcje</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="p : ${pracownicy}">
-        <td th:text="${p.id}">1</td>
-        <td th:text="${p.tytulNaukowy}">Dr</td>
-        <td th:text="${p.imie}">Jan</td>
-        <td th:text="${p.nazwisko}">Kowalski</td>
-        <td>
-          <a th:href="@{/pracownicy/edycja/{id}(id=${p.id})}"
-             th:aria-label="'Edytuj dane pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}">Edytuj</a> |
-
-          <a th:href="@{/pracownicy/usun/{id}(id=${p.id})}"
-             th:aria-label="'Usuń pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}"
-             onclick="return confirm('Czy na pewno chcesz usunąć tego pracownika?')">Usuń</a>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table>
+        <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Tytuł naukowy</th>
+          <th scope="col">Imię</th>
+          <th scope="col">Nazwisko</th>
+          <th scope="col">Akcje</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Obsługa pustej listy -->
+        <tr th:if="${#lists.isEmpty(pracownicy)}" class="empty-row">
+          <td colspan="5">Brak zarejestrowanych pracowników</td>
+        </tr>
+        <tr th:each="p : ${pracownicy}" th:unless="${#lists.isEmpty(pracownicy)}">
+          <td th:text="${p.id}">1</td>
+          <td th:text="${p.tytulNaukowy}">Dr</td>
+          <td th:text="${p.imie}">Jan</td>
+          <td th:text="${p.nazwisko}">Kowalski</td>
+          <td class="actions">
+            <a th:href="@{/pracownicy/edycja/{id}(id=${p.id})}" class="btn" th:aria-label="'Edytuj pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}">Edytuj</a>
+            <form th:action="@{/pracownicy/usun/{id}(id=${p.id})}" method="post" style="display:inline;">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit" class="btn-delete"
+                      th:aria-label="'Usuń pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}"
+                      onclick="return confirm('Czy na pewno chcesz usunąć tego pracownika?')">
+                Usuń
+              </button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
+
+  <a th:href="@{/dashboard}" class="btn-secondary">← Powrót do panelu</a>
 </main>
 </body>
 </html>

@@ -2,16 +2,95 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wystaw ocenę</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background-color: #f4f7fa;
+    }
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: inline-block;
+      width: 180px;
+      font-weight: bold;
+    }
+    select, input[type="number"], input[type="text"] {
+      padding: 6px;
+      width: 250px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    button:hover {
+      background-color: #27ae60;
+    }
+    .error-message {
+      color: red;
+      font-size: 0.9em;
+      display: block;
+      margin-top: 4px;
+    }
+    .global-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      border: 1px solid #f5c6cb;
+    }
+    .actions {
+      margin-top: 1.5rem;
+    }
+    .cancel-link {
+      margin-left: 10px;
+      color: #666;
+      text-decoration: none;
+    }
+    .cancel-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
 <main>
   <h1>Wystawianie nowej oceny cząstkowej</h1>
 
-  <form th:action="@{/oceny/zapisz}" th:object="${ocena}" method="post">
+  <!-- Formularz z novalidate i tokenem CSRF -->
+  <form th:action="@{/oceny/zapisz}" th:object="${ocena}" method="post" novalidate>
     <input type="hidden" th:field="*{id}" />
+    <!-- Token CSRF (jeśli nie dodaje go Thymeleaf automatycznie) -->
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
-    <div>
+    <!-- Błędy globalne formularza -->
+    <div th:if="${#fields.hasGlobalErrors()}" class="global-error">
+      <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+    </div>
+
+    <div class="form-group">
       <label for="zapis">Student / Przedmiot (zapis):</label>
       <select id="zapis" th:field="*{zapis.id}" required>
         <option value="">-- Wybierz zapis --</option>
@@ -20,36 +99,34 @@
                 th:text="${z.student.imie + ' ' + z.student.nazwisko + ' - ' + z.grupa.przedmiot.nazwa + ' (' + z.grupa.nazwaGrupy + ')'}">
         </option>
       </select>
-      <span th:if="${#fields.hasErrors('zapis')}" th:errors="*{zapis}" style="color:red;"></span>
+      <span th:if="${#fields.hasErrors('zapis')}" th:errors="*{zapis}" class="error-message"></span>
     </div>
-    <br/>
 
-    <div>
+    <div class="form-group">
       <label for="typ">Typ oceny:</label>
       <select id="typ" th:field="*{typ.id}" required>
         <option value="">-- Wybierz typ --</option>
         <option th:each="t : ${typyOcen}" th:value="${t.id}" th:text="${t.nazwa + ' (waga: ' + t.waga + ')'}"></option>
       </select>
-      <span th:if="${#fields.hasErrors('typ')}" th:errors="*{typ}" style="color:red;"></span>
+      <span th:if="${#fields.hasErrors('typ')}" th:errors="*{typ}" class="error-message"></span>
     </div>
-    <br/>
 
-    <div>
+    <div class="form-group">
       <label for="wartosc">Ocena (2.0 – 5.0, co 0.5):</label>
-      <input type="number" step="0.5" id="wartosc" th:field="*{wartosc}" required />
-      <span th:if="${#fields.hasErrors('wartosc')}" th:errors="*{wartosc}" style="color:red;"></span>
+      <input type="number" step="0.5" min="2.0" max="5.0" id="wartosc" th:field="*{wartosc}" required autocomplete="off" />
+      <span th:if="${#fields.hasErrors('wartosc')}" th:errors="*{wartosc}" class="error-message"></span>
     </div>
-    <br/>
 
-    <div>
+    <div class="form-group">
       <label for="komentarz">Komentarz (opcjonalnie):</label>
-      <input type="text" id="komentarz" th:field="*{komentarz}" />
-      <span th:if="${#fields.hasErrors('komentarz')}" th:errors="*{komentarz}" style="color:red;"></span>
+      <input type="text" id="komentarz" th:field="*{komentarz}" autocomplete="off" />
+      <span th:if="${#fields.hasErrors('komentarz')}" th:errors="*{komentarz}" class="error-message"></span>
     </div>
-    <br/>
 
-    <button type="submit">Wystaw ocenę</button>
-    <a href="/oceny">Anuluj</a>
+    <div class="actions">
+      <button type="submit">Wystaw ocenę</button>
+      <a th:href="@{/oceny}" class="cancel-link">Anuluj</a>
+    </div>
   </form>
 </main>
 </body>

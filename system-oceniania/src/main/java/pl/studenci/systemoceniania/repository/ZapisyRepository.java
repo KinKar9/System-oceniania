@@ -10,4 +10,5 @@ public interface ZapisyRepository extends JpaRepository<Zapisy, Long> {
     List<Zapisy> findByGrupaId(Long grupaId);
     Optional<Zapisy> findByStudentIdAndGrupaId(Long studentId, Long grupaId);
     List<Zapisy> findByStudentIdAndStatus(Long studentId, String status);
+    long countByGrupaId(Long grupaId);
 }
