@@ -2,7 +2,77 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formularz Przedmiotu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f4f7fa;
+        }
+        main {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        input {
+            padding: 6px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+            display: block;
+            margin-top: 4px;
+        }
+        .global-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #f5c6cb;
+        }
+        .actions {
+            margin-top: 1.5rem;
+        }
+        .cancel-link {
+            margin-left: 10px;
+            color: #666;
+            text-decoration: none;
+        }
+        .cancel-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 <main>
@@ -11,27 +81,32 @@
     <section aria-labelledby="form-przedmiot">
         <h2 id="form-przedmiot" th:text="${przedmiot.id == null} ? 'Wprowadź dane nowego przedmiotu' : 'Zmień dane przedmiotu'">Dane przedmiotu</h2>
 
-        <form th:action="@{/przedmioty/zapisz}" th:object="${przedmiot}" method="post">
+        <form th:action="@{/przedmioty/zapisz}" th:object="${przedmiot}" method="post" novalidate>
             <input type="hidden" th:field="*{id}" />
+            <!-- Token CSRF -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
-            <div>
+            <!-- Błędy globalne -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="global-error">
+                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+            </div>
+
+            <div class="form-group">
                 <label for="kodPrzedmiotu">Kod przedmiotu:</label>
-                <input type="text" id="kodPrzedmiotu" th:field="*{kodPrzedmiotu}" aria-required="true" />
-                <span th:if="${#fields.hasErrors('kodPrzedmiotu')}" th:errors="*{kodPrzedmiotu}" style="color: red;" role="alert">Błąd kodu</span>
+                <input type="text" id="kodPrzedmiotu" th:field="*{kodPrzedmiotu}" required aria-required="true" aria-describedby="kod-error" />
+                <span id="kod-error" th:if="${#fields.hasErrors('kodPrzedmiotu')}" th:errors="*{kodPrzedmiotu}" class="error-message" role="alert"></span>
             </div>
 
-            <br/>
-
-            <div>
-                <label for="nazwaPrzedmiotu">Nazwa przedmiotu:</label>
-                <input type="text" id="nazwaPrzedmiotu" th:field="*{nazwa}" aria-required="true" />
-                <span th:if="${#fields.hasErrors('nazwa')}" th:errors="*{nazwa}" style="color: red;" role="alert">Błąd nazwy</span>
+            <div class="form-group">
+                <label for="nazwa">Nazwa przedmiotu:</label>
+                <input type="text" id="nazwa" th:field="*{nazwa}" required aria-required="true" aria-describedby="nazwa-error" />
+                <span id="nazwa-error" th:if="${#fields.hasErrors('nazwa')}" th:errors="*{nazwa}" class="error-message" role="alert"></span>
             </div>
 
-            <br/>
-
-            <button type="submit" aria-label="Zatwierdź i zapisz przedmiot">Zapisz przedmiot</button>
-            <a href="/przedmioty" style="margin-left: 10px;">Anuluj</a>
+            <div class="actions">
+                <button type="submit" aria-label="Zatwierdź i zapisz przedmiot">Zapisz przedmiot</button>
+                <a th:href="@{/przedmioty}" class="cancel-link" onclick="return confirm('Czy na pewno chcesz anulować? Wszystkie zmiany zostaną utracone.');">Anuluj</a>
+            </div>
         </form>
     </section>
 </main>

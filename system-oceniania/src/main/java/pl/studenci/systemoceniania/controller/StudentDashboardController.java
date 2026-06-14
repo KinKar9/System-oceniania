@@ -1,71 +1,95 @@
 package pl.studenci.systemoceniania.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.transaction.annotation.Transactional;
 import pl.studenci.systemoceniania.entity.Ocena;
 import pl.studenci.systemoceniania.entity.Student;
+import pl.studenci.systemoceniania.entity.Uzytkownik;
 import pl.studenci.systemoceniania.service.OcenaService;
-import pl.studenci.systemoceniania.service.StudentService;
 import pl.studenci.systemoceniania.service.StatystykiService;
+import pl.studenci.systemoceniania.service.UzytkownikService;
 
 import java.util.List;
 
 @Controller
 @RequestMapping("/student")
+@PreAuthorize("isAuthenticated()")
 public class StudentDashboardController {
 
-    private final StudentService studentService;
-    private final StatystykiService statystykiService;
-    private final OcenaService ocenaService;  // <-- dodane
+    private static final Logger log = LoggerFactory.getLogger(StudentDashboardController.class);
 
-    public StudentDashboardController(StudentService studentService,
+    private final OcenaService ocenaService;
+    private final StatystykiService statystykiService;
+    private final UzytkownikService uzytkownikService;
+
+    public StudentDashboardController(OcenaService ocenaService,
                                       StatystykiService statystykiService,
-                                      OcenaService ocenaService) {  // <-- dodany parametr
-        this.studentService = studentService;
-        this.statystykiService = statystykiService;
+                                      UzytkownikService uzytkownikService) {
         this.ocenaService = ocenaService;
+        this.statystykiService = statystykiService;
+        this.uzytkownikService = uzytkownikService;
     }
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication auth, Model model) {
+        if (auth == null) return "redirect:/login";
         model.addAttribute("username", auth.getName());
         return "student/dashboard";
     }
 
     @GetMapping("/moje-oceny")
-    @Transactional   // <-- KLUCZOWE
-    public String mojeOceny(Authentication auth, Model model) {
+    public String myGrades(Authentication auth, Model model) {
+        if (auth == null) return "redirect:/login";
         try {
-            String email = auth.getName();
-            Student student = studentService.findByEmail(email);
-            // Zamiast iterować po leniwej kolekcji, używamy dedykowanej metody z JOIN FETCH
+            Student student = pobierzStudentaZAuth(auth);
+            if (student == null) return "error";
+
             List<Ocena> oceny = ocenaService.getOcenyStudenta(student.getId());
-            Double srednia = statystykiService.pobierzSredniaStudenta(student.getId());
+            Double srednia = statystykiService
+                    .pobierzSredniaStudenta(student.getId())
+                    .orElse(null);
+
             model.addAttribute("student", student);
             model.addAttribute("oceny", oceny);
             model.addAttribute("srednia", srednia);
             return "student/oceny";
+
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Błąd podczas pobierania ocen dla użytkownika {}: {}",
+                    auth.getName(), e.getMessage(), e);
             return "error";
         }
     }
 
     @GetMapping("/profil")
-    @Transactional   // już było, ale zostawiamy
     public String profil(Authentication auth, Model model) {
-        String email = auth.getName();
-        Student student = studentService.findByEmail(email);
-        model.addAttribute("student", student);
-        return "student/profil";
+        if (auth == null) return "redirect:/login";
+        try {
+            Student student = pobierzStudentaZAuth(auth);
+            if (student == null) return "error";
+
+            model.addAttribute("student", student);
+            return "student/profil";
+
+        } catch (Exception e) {
+            log.error("Błąd podczas pobierania profilu dla użytkownika {}: {}",
+                    auth.getName(), e.getMessage(), e);
+            return "error";
+        }
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "test";
+    private Student pobierzStudentaZAuth(Authentication auth) {
+        Uzytkownik uzytkownik = uzytkownikService.findByUsername(auth.getName());
+        Student student = uzytkownik.getStudent();
+        if (student == null) {
+            log.warn("Użytkownik '{}' nie ma powiązanego studenta", auth.getName());
+        }
+        return student;
     }
 }

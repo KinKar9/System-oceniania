@@ -2,44 +2,143 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Oceniania - Sale</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    /* Dodatkowe style dla responsywności i stanów */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      margin: 1rem 0;
+      color: #6c757d;
+    }
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+    }
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+    .btn-warning {
+      background-color: #ffc107;
+      color: #212529;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-warning:hover {
+      background-color: #e0a800;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 600px) {
+      .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  </style>
 </head>
 <body>
 <main>
   <h1 id="main-heading">Zarządzanie Salami</h1>
 
   <div style="margin-bottom: 20px;">
-    <a href="/sale/nowy" role="button" aria-label="Przejdź do formularza dodawania nowej sali">➕ Dodaj nową salę</a>
+    <a th:href="@{/sale/nowy}" class="btn btn-primary" aria-label="Przejdź do formularza dodawania nowej sali">
+      <span aria-hidden="true">➕</span> Dodaj nową salę
+    </a>
+  </div>
+
+  <!-- Wskaźnik ładowania (opcjonalny, jeśli dane są pobierane asynchronicznie) -->
+  <div id="loadingSpinner" class="loading-spinner">
+    <span>Ładowanie danych...</span>
   </div>
 
   <section aria-label="Tabela sal lekcyjnych">
     <h2>Lista sal lekcyjnych</h2>
-    <table border="1">
-      <thead>
-      <tr>
-        <th scope="col">ID</th>
-        <th scope="col">Numer sali</th>
-        <th scope="col">Pojemność</th>
-        <th scope="col">Akcje</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="s : ${sale}">
-        <td th:text="${s.id}">1</td>
-        <td th:text="${s.numerSali}">104-A</td>
-        <td th:text="${s.pojemnosc}">30</td>
-        <td>
-          <a th:href="@{/sale/edycja/{id}(id=${s.id})}"
-             th:aria-label="'Edytuj salę numer ' + ${s.numerSali}">Edytuj</a> |
 
-          <a th:href="@{/sale/usun/{id}(id=${s.id})}"
-             th:aria-label="'Usuń salę numer ' + ${s.numerSali}"
-             onclick="return confirm('Czy na pewno chcesz usunąć tę salę?')">Usuń</a>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+    <!-- Komunikat o pustej liście -->
+    <div th:if="${#lists.isEmpty(sale)}" class="empty-state" role="alert">
+      <p>📭 Brak sal w systemie. Kliknij przycisk "Dodaj nową salę", aby utworzyć pierwszą salę.</p>
+    </div>
+
+    <!-- Tabela widoczna tylko gdy lista nie jest pusta -->
+    <div th:unless="${#lists.isEmpty(sale)}" class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Numer sali</th>
+          <th scope="col">Pojemność</th>
+          <th scope="col">Akcje</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${sale}">
+          <td th:text="${s.id}" class="align-middle">1</td>
+          <td th:text="${s.numerSali}" class="align-middle">104-A</td>
+          <td th:text="${s.pojemnosc}" class="align-middle">30</td>
+          <td class="align-middle">
+            <div class="action-buttons">
+              <a th:href="@{/sale/edycja/{id}(id=${s.id})}"
+                 th:aria-label="'Edytuj salę numer ' + ${s.numerSali}"
+                 class="btn-warning">Edytuj</a>
+
+              <form th:action="@{/sale/usun/{id}(id=${s.id})}" method="post" style="display: inline;"
+                    th:data-numer="${s.numerSali}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="btn-danger"
+                        th:aria-label="'Usuń salę numer ' + ${s.numerSali}">Usuń</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
+
+  <a th:href="@{/dashboard}" class="back-link" aria-label="Powrót do panelu głównego">← Powrót do panelu</a>
 </main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var spinner = document.getElementById('loadingSpinner');
+    if (spinner) spinner.style.display = 'none';
+
+    document.querySelectorAll('form[data-numer]').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        var numer = form.getAttribute('data-numer') || '?';
+        // escapowanie znaków specjalnych — ochrona przed XSS
+        var escaped = numer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        if (!confirm('Czy na pewno chcesz usunąć salę numer ' + escaped + '?')) {
+          e.preventDefault();
+        }
+      });
+    });
+  });
+</script>
 </body>
 </html>

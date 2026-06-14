@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kierunki studiów</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    /* Dodatkowe style responsywności */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .empty-row td {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+      color: #666;
+    }
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      font-size: inherit;
+    }
+    .btn-delete:hover {
+      color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Zarządzanie kierunkami</h1>
+  <a th:href="@{/kierunki/nowy}" class="btn">➕ Dodaj nowy kierunek</a>
+
+  <div class="table-responsive">
+    <table border="1">
+      <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Nazwa</th>
+        <th scope="col">Kod</th>
+        <th scope="col">Stopień</th>
+        <th scope="col">Akcje</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Obsługa pustej listy -->
+      <tr th:if="${#lists.isEmpty(kierunki)}" class="empty-row">
+        <td colspan="5">Brak zdefiniowanych kierunków</td>
+      </tr>
+      <tr th:each="k : ${kierunki}" th:unless="${#lists.isEmpty(kierunki)}">
+        <td th:text="${k.id}">1</td>
+        <td th:text="${k.nazwa}">Informatyka</td>
+        <td th:text="${k.kodKierunku}">INF</td>
+        <!-- Mapowanie stopnia -->
+        <td>
+          <span th:if="${k.stopien == 1}">I stopień (licencjat/inżynier)</span>
+          <span th:if="${k.stopien == 2}">II stopień (magister)</span>
+          <span th:if="${k.stopien != 1 and k.stopien != 2}" th:text="${k.stopien}"></span>
+        </td>
+        <td>
+          <a th:href="@{/kierunki/edycja/{id}(id=${k.id})}" class="btn-edit">Edytuj</a>
+          <!-- Formularz usuwania z metodą POST i tokenem CSRF -->
+          <form th:action="@{/kierunki/usun/{id}(id=${k.id})}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="btn-delete"
+                    th:aria-label="'Usuń kierunek ' + ${k.nazwa}"
+                    onclick="return confirm('Czy na pewno chcesz usunąć kierunek?')">
+              Usuń
+            </button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <a th:href="@{/dashboard}" class="back-link">← Powrót do panelu</a>
+</main>
+</body>
+</html>

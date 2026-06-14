@@ -1,119 +1,282 @@
+-- =====================================================================
+-- USTAWIENIE UŻYTKOWNIKÓW / RÓL / UPRAWNIEŃ
+-- Wymaga uruchomienia w SQL*Plus / SQLcl, bo używa ACCEPT i UNDEFINE
+-- =====================================================================
 
--- 1. Utworzenie roli z uprawnieniem EXECUTE
+SET SERVEROUTPUT ON
+
+-- =====================================================================
+-- 1. Pobranie haseł
+-- =====================================================================
+ACCEPT app_owner_pass     CHAR PROMPT 'Podaj hasło dla APP_OWNER: ' HIDE
+ACCEPT admin_pass         CHAR PROMPT 'Podaj hasło dla ADMINISTRATOR: ' HIDE
+ACCEPT app_identity_pass  CHAR PROMPT 'Podaj hasło dla APP_IDENTITY: ' HIDE
+ACCEPT dev1_pass          CHAR PROMPT 'Podaj hasło dla DEVELOPER1: ' HIDE
+ACCEPT dev2_pass          CHAR PROMPT 'Podaj hasło dla DEVELOPER2: ' HIDE
+
+-- =====================================================================
+-- 2. Tworzenie użytkowników i nadawanie uprawnień
+-- =====================================================================
 DECLARE
-role_exists NUMBER;
+PROCEDURE create_and_grant(
+        p_user   VARCHAR2,
+        p_pass   VARCHAR2,
+        p_grants VARCHAR2
+    ) IS
+        l_sql         VARCHAR2(4000);
+        l_user        VARCHAR2(128);
+        l_pass        VARCHAR2(500);
+        user_exists   NUMBER;
 BEGIN
-SELECT COUNT(*) INTO role_exists FROM dba_roles WHERE role = 'DB_PROCEXECUTOR';
-IF role_exists = 0 THEN
-      EXECUTE IMMEDIATE 'CREATE ROLE db_procexecutor';
-EXECUTE IMMEDIATE 'GRANT EXECUTE ANY PROCEDURE TO db_procexecutor';
-DBMS_OUTPUT.PUT_LINE('Rola db_procexecutor utworzona.');
+        -- Bezpieczna nazwa użytkownika
+        l_user := DBMS_ASSERT.SIMPLE_SQL_NAME(UPPER(p_user));
+
+        -- Oracle akceptuje hasło w podwójnych cudzysłowach.
+        -- Escaping podwójnych cudzysłowów wewnątrz hasła.
+        l_pass := REPLACE(p_pass, '"', '""');
+
+SELECT COUNT(*)
+INTO user_exists
+FROM dba_users
+WHERE username = l_user;
+
+IF user_exists = 0 THEN
+            l_sql := 'CREATE USER ' || l_user ||
+                     ' IDENTIFIED BY "' || l_pass || '"';
+EXECUTE IMMEDIATE l_sql;
+
+IF p_grants IS NOT NULL THEN
+                EXECUTE IMMEDIATE 'GRANT ' || p_grants || ' TO ' || l_user;
+END IF;
+
+            DBMS_OUTPUT.PUT_LINE('Utworzono: ' || l_user);
 ELSE
-      DBMS_OUTPUT.PUT_LINE('Rola db_procexecutor już istnieje.');
+            DBMS_OUTPUT.PUT_LINE('Istnieje: ' || l_user);
+END IF;
+
+EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Błąd przy tworzeniu ' || p_user || ': ' || SQLERRM);
+            RAISE;
+END create_and_grant;
+BEGIN
+    -- APP_OWNER
+    create_and_grant(
+        'APP_OWNER',
+        '&&app_owner_pass',
+        'CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE SEQUENCE, UNLIMITED TABLESPACE'
+    );
+
+    -- Rola wykonawcza
+BEGIN
+EXECUTE IMMEDIATE 'CREATE ROLE db_procexecutor';
+EXCEPTION
+        WHEN OTHERS THEN
+            -- ORA-01921: role name conflicts with another user or role name
+            IF SQLCODE != -1921 THEN
+                RAISE;
 END IF;
 END;
-/
 
--- 2. Tworzenie użytkowników (jeśli nie istnieją)
-DECLARE
-user_exists NUMBER;
+    -- Nadanie EXECUTE dla procedur/funkcji APP_OWNER
+FOR rec IN (
+        SELECT object_name
+        FROM dba_objects
+        WHERE owner = 'APP_OWNER'
+          AND object_type IN ('PROCEDURE', 'FUNCTION')
+    ) LOOP
 BEGIN
-   -- Administrator
-SELECT COUNT(*) INTO user_exists FROM dba_users WHERE username = 'ADMINISTRATOR';
-IF user_exists = 0 THEN
-      EXECUTE IMMEDIATE 'CREATE USER administrator IDENTIFIED BY "Admin123!"';
-EXECUTE IMMEDIATE 'GRANT DBA TO administrator';
-DBMS_OUTPUT.PUT_LINE('Użytkownik administrator utworzony.');
-ELSE
-      DBMS_OUTPUT.PUT_LINE('Użytkownik administrator już istnieje.');
-END IF;
-
-   -- ApplicationIdentity
-SELECT COUNT(*) INTO user_exists FROM dba_users WHERE username = 'APP_IDENTITY';
-IF user_exists = 0 THEN
-      EXECUTE IMMEDIATE 'CREATE USER app_identity IDENTIFIED BY "AppPass456!"';
-EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO app_identity';
-EXECUTE IMMEDIATE 'GRANT CREATE SESSION TO app_identity';
-DBMS_OUTPUT.PUT_LINE('Użytkownik app_identity utworzony.');
-ELSE
-      DBMS_OUTPUT.PUT_LINE('Użytkownik app_identity już istnieje.');
-END IF;
-
-   -- Developer 1
-SELECT COUNT(*) INTO user_exists FROM dba_users WHERE username = 'DEVELOPER1';
-IF user_exists = 0 THEN
-      EXECUTE IMMEDIATE 'CREATE USER developer1 IDENTIFIED BY "Dev1Pass!"';
-EXECUTE IMMEDIATE 'GRANT CONNECT TO developer1';
-DBMS_OUTPUT.PUT_LINE('Użytkownik developer1 utworzony.');
-ELSE
-      DBMS_OUTPUT.PUT_LINE('Użytkownik developer1 już istnieje.');
-END IF;
-
-   -- Developer 2
-SELECT COUNT(*) INTO user_exists FROM dba_users WHERE username = 'DEVELOPER2';
-IF user_exists = 0 THEN
-      EXECUTE IMMEDIATE 'CREATE USER developer2 IDENTIFIED BY "Dev2Pass!"';
-EXECUTE IMMEDIATE 'GRANT CONNECT TO developer2';
-DBMS_OUTPUT.PUT_LINE('Użytkownik developer2 utworzony.');
-ELSE
-      DBMS_OUTPUT.PUT_LINE('Użytkownik developer2 już istnieje.');
-END IF;
+EXECUTE IMMEDIATE
+    'GRANT EXECUTE ON APP_OWNER.' ||
+    DBMS_ASSERT.SIMPLE_SQL_NAME(rec.object_name) ||
+    ' TO db_procexecutor';
+EXCEPTION
+            WHEN OTHERS THEN
+                NULL;
 END;
-/
-
--- 3. Nadanie uprawnień CRUD dla app_identity na tabelach schematu SYSTEM
-BEGIN
-FOR t IN (SELECT table_name FROM all_tables WHERE owner = 'SYSTEM') LOOP
-      EXECUTE IMMEDIATE 'GRANT SELECT, INSERT, UPDATE, DELETE ON SYSTEM.' || t.table_name || ' TO app_identity';
 END LOOP;
-   DBMS_OUTPUT.PUT_LINE('Uprawnienia CRUD dla app_identity nadane na tabelach SYSTEM.');
-END;
-/
 
--- Nadanie roli db_procexecutor dla app_identity
-GRANT db_procexecutor TO app_identity;
+    -- ADMINISTRATOR
+    create_and_grant(
+        'ADMINISTRATOR',
+        '&&admin_pass',
+        'CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE SEQUENCE, UNLIMITED TABLESPACE'
+    );
 
--- 4. Nadanie prawa SELECT dla developerów na tabelach SYSTEM
+EXECUTE IMMEDIATE 'GRANT db_procexecutor TO ADMINISTRATOR';
+
+-- APP_IDENTITY
+create_and_grant(
+        'APP_IDENTITY',
+        '&&app_identity_pass',
+        'CONNECT, RESOURCE'
+    );
+
+    -- DEVELOPER1 / DEVELOPER2
+    create_and_grant('DEVELOPER1', '&&dev1_pass', 'CONNECT');
+    create_and_grant('DEVELOPER2', '&&dev2_pass', 'CONNECT');
+
+    -- CRUD dla APP_IDENTITY na wszystkich tabelach APP_OWNER
+FOR t IN (
+        SELECT table_name
+        FROM dba_tables
+        WHERE owner = 'APP_OWNER'
+    ) LOOP
 BEGIN
-FOR t IN (SELECT table_name FROM all_tables WHERE owner = 'SYSTEM') LOOP
-      EXECUTE IMMEDIATE 'GRANT SELECT ON SYSTEM.' || t.table_name || ' TO developer1, developer2';
-END LOOP;
-   DBMS_OUTPUT.PUT_LINE('Uprawnienia SELECT dla developerów nadane.');
+EXECUTE IMMEDIATE
+    'GRANT SELECT, INSERT, UPDATE, DELETE ON APP_OWNER.' ||
+    DBMS_ASSERT.SIMPLE_SQL_NAME(t.table_name) ||
+    ' TO APP_IDENTITY';
+EXCEPTION
+            WHEN OTHERS THEN
+                NULL;
 END;
-/
+END LOOP;
 
--- 5. Konfiguracja Unified Auditing (polityka app_full_audit)
--- Usunięcie starej polityki (jeśli istnieje)
+EXECUTE IMMEDIATE 'GRANT db_procexecutor TO APP_IDENTITY';
+
+-- SELECT dla developerów
+FOR t IN (
+        SELECT table_name
+        FROM dba_tables
+        WHERE owner = 'APP_OWNER'
+    ) LOOP
+BEGIN
+EXECUTE IMMEDIATE
+    'GRANT SELECT ON APP_OWNER.' ||
+    DBMS_ASSERT.SIMPLE_SQL_NAME(t.table_name) ||
+    ' TO DEVELOPER1';
+EXCEPTION
+            WHEN OTHERS THEN
+                NULL;
+END;
+
+BEGIN
+EXECUTE IMMEDIATE
+    'GRANT SELECT ON APP_OWNER.' ||
+    DBMS_ASSERT.SIMPLE_SQL_NAME(t.table_name) ||
+    ' TO DEVELOPER2';
+EXCEPTION
+            WHEN OTHERS THEN
+                NULL;
+END;
+END LOOP;
+
+    -- =================================================================
+    -- 3. Audyt (Unified Auditing)
+    -- =================================================================
 BEGIN
 EXECUTE IMMEDIATE 'NOAUDIT POLICY app_full_audit';
-EXECUTE IMMEDIATE 'DROP AUDIT POLICY app_full_audit';
-DBMS_OUTPUT.PUT_LINE('Stara polityka audytu usunięta.');
 EXCEPTION
-   WHEN OTHERS THEN
-      DBMS_OUTPUT.PUT_LINE('Brak starej polityki lub błąd przy usuwaniu.');
+        WHEN OTHERS THEN
+            NULL;
+END;
+
+BEGIN
+EXECUTE IMMEDIATE 'DROP AUDIT POLICY app_full_audit';
+EXCEPTION
+        WHEN OTHERS THEN
+            NULL;
+END;
+
+BEGIN
+EXECUTE IMMEDIATE q'[
+            CREATE AUDIT POLICY app_full_audit ACTIONS
+                INSERT ON APP_OWNER.STUDENCI,
+                UPDATE ON APP_OWNER.STUDENCI,
+                DELETE ON APP_OWNER.STUDENCI,
+                SELECT ON APP_OWNER.STUDENCI,
+
+                INSERT ON APP_OWNER.PRACOWNICY,
+                UPDATE ON APP_OWNER.PRACOWNICY,
+                DELETE ON APP_OWNER.PRACOWNICY,
+                SELECT ON APP_OWNER.PRACOWNICY,
+
+                INSERT ON APP_OWNER.SALE,
+                UPDATE ON APP_OWNER.SALE,
+                DELETE ON APP_OWNER.SALE,
+                SELECT ON APP_OWNER.SALE,
+
+                INSERT ON APP_OWNER.PRZEDMIOTY,
+                UPDATE ON APP_OWNER.PRZEDMIOTY,
+                DELETE ON APP_OWNER.PRZEDMIOTY,
+                SELECT ON APP_OWNER.PRZEDMIOTY,
+
+                INSERT ON APP_OWNER.OCENY,
+                UPDATE ON APP_OWNER.OCENY,
+                DELETE ON APP_OWNER.OCENY,
+                SELECT ON APP_OWNER.OCENY,
+
+                INSERT ON APP_OWNER.GRUPY,
+                UPDATE ON APP_OWNER.GRUPY,
+                DELETE ON APP_OWNER.GRUPY,
+                SELECT ON APP_OWNER.GRUPY,
+
+                INSERT ON APP_OWNER.ZAPISY,
+                UPDATE ON APP_OWNER.ZAPISY,
+                DELETE ON APP_OWNER.ZAPISY,
+                SELECT ON APP_OWNER.ZAPISY,
+
+                INSERT ON APP_OWNER.SLOWNIK_OCEN,
+                UPDATE ON APP_OWNER.SLOWNIK_OCEN,
+                DELETE ON APP_OWNER.SLOWNIK_OCEN,
+                SELECT ON APP_OWNER.SLOWNIK_OCEN,
+
+                INSERT ON APP_OWNER.WARUNKI_ZAL,
+                UPDATE ON APP_OWNER.WARUNKI_ZAL,
+                DELETE ON APP_OWNER.WARUNKI_ZAL,
+                SELECT ON APP_OWNER.WARUNKI_ZAL,
+
+                INSERT ON APP_OWNER.UZYTKOWNICY,
+                UPDATE ON APP_OWNER.UZYTKOWNICY,
+                DELETE ON APP_OWNER.UZYTKOWNICY,
+                SELECT ON APP_OWNER.UZYTKOWNICY,
+
+                INSERT ON APP_OWNER.ROLE,
+                UPDATE ON APP_OWNER.ROLE,
+                DELETE ON APP_OWNER.ROLE,
+                SELECT ON APP_OWNER.ROLE,
+
+                INSERT ON APP_OWNER.UZYTKOWNICY_ROLE,
+                UPDATE ON APP_OWNER.UZYTKOWNICY_ROLE,
+                DELETE ON APP_OWNER.UZYTKOWNICY_ROLE,
+                SELECT ON APP_OWNER.UZYTKOWNICY_ROLE,
+
+                INSERT ON APP_OWNER.HISTORIA_OCEN,
+                UPDATE ON APP_OWNER.HISTORIA_OCEN,
+                DELETE ON APP_OWNER.HISTORIA_OCEN,
+                SELECT ON APP_OWNER.HISTORIA_OCEN,
+
+                INSERT ON APP_OWNER.LOGI_SYSTEMU,
+                UPDATE ON APP_OWNER.LOGI_SYSTEMU,
+                DELETE ON APP_OWNER.LOGI_SYSTEMU,
+                SELECT ON APP_OWNER.LOGI_SYSTEMU,
+
+                INSERT ON APP_OWNER.RANKINGI,
+                UPDATE ON APP_OWNER.RANKINGI,
+                DELETE ON APP_OWNER.RANKINGI,
+                SELECT ON APP_OWNER.RANKINGI,
+
+                INSERT ON APP_OWNER.KIERUNKI,
+                UPDATE ON APP_OWNER.KIERUNKI,
+                DELETE ON APP_OWNER.KIERUNKI,
+                SELECT ON APP_OWNER.KIERUNKI
+        ]';
+EXECUTE IMMEDIATE 'AUDIT POLICY app_full_audit';
+DBMS_OUTPUT.PUT_LINE('Polityka audytu włączona.');
+EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Błąd przy polityce audytu: ' || SQLERRM);
+END;
+
 END;
 /
 
--- Tworzenie nowej polityki dla kluczowych tabel w SYSTEM
-CREATE AUDIT POLICY app_full_audit
-  ACTIONS INSERT, UPDATE, DELETE, SELECT ON SYSTEM.STUDENCI,
-                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.PRACOWNICY,
-                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.SALE,
-                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.PRZEDMIOTY,
-                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.OCENY,
-                                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.GRUPY,
-                                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.ZAPISY,
-                                                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.SLOWNIK_OCEN,
-                                                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.WARUNKI_ZAL,
-                                                                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.UZYTKOWNICY,
-                                                                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.ROLE,
-                                                                                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.UZYTKOWNICY_ROLE,
-                                                                                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.HISTORIA_OCEN,
-                                                                                                                  INSERT, UPDATE, DELETE, SELECT ON SYSTEM.LOGI_SYSTEMU,
-                                                                                                                          INSERT, UPDATE, DELETE, SELECT ON SYSTEM.RANKINGI;
-
--- Włączenie polityki
-AUDIT POLICY app_full_audit;
-
--- Potwierdzenie
-SELECT policy_name, enabled_option FROM audit_unified_enabled_policies WHERE policy_name = 'APP_FULL_AUDIT';
+-- =====================================================================
+-- 4. Czyszczenie zmiennych substitution
+-- =====================================================================
+UNDEFINE app_owner_pass
+UNDEFINE admin_pass
+UNDEFINE app_identity_pass
+UNDEFINE dev1_pass
+UNDEFINE dev2_pass

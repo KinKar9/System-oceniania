@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel zarządzania</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f4f7fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #0066cc;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0055aa;
+        }
+        .btn-admin {
+            background: #28a745;
+        }
+        .btn-admin:hover {
+            background: #218838;
+        }
+        .btn-logout {
+            background: #666;
+        }
+        .btn-logout:hover {
+            background: #555;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Panel zarządzania</h1>
+    <p>Witaj, <span th:text="${#authentication.name}"></span>!</p>
+
+    <!-- Miejsce na komunikaty flash (sukces/błąd) -->
+    <div th:if="${message}" th:class="'message ' + ${message.type}" th:text="${message.text}"></div>
+
+    <div class="card">
+        <h2>📘 Oceny</h2>
+        <p>Przeglądaj i wystawiaj oceny cząstkowe.</p>
+        <a th:href="@{/oceny}" class="btn">Zarządzaj ocenami</a>
+    </div>
+
+    <div class="card">
+        <h2>📚 Przedmioty</h2>
+        <p>Lista przedmiotów, dodawanie, edycja.</p>
+        <a th:href="@{/przedmioty}" class="btn">Zarządzaj przedmiotami</a>
+    </div>
+
+    <div class="card">
+        <h2>🏢 Sale</h2>
+        <p>Sale wykładowe i laboratoryjne.</p>
+        <a th:href="@{/sale}" class="btn">Zarządzaj salami</a>
+    </div>
+
+    <div th:if="${isAdmin != null and isAdmin}">
+        <div class="card">
+            <h2>👥 Pracownicy</h2>
+            <p>Dodawanie, edycja, usuwanie pracowników.</p>
+            <a th:href="@{/pracownicy}" class="btn btn-admin">Zarządzaj pracownikami</a>
+        </div>
+
+        <div class="card">
+            <h2>🎓 Kierunki</h2>
+            <p>Zarządzanie kierunkami studiów.</p>
+            <a th:href="@{/kierunki}" class="btn btn-admin">Zarządzaj kierunkami</a>
+        </div>
+    </div>
+
+    <!-- Formularz wylogowania z tokenem CSRF -->
+    <form th:action="@{/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <button type="submit" class="btn btn-logout">Wyloguj</button>
+    </form>
+</div>
+</body>
+</html>
