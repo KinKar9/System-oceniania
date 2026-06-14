@@ -26,7 +26,7 @@ public class ZapisyRestController {
     @GetMapping("/{id}")
     public ResponseEntity<Zapisy> getOne(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(service.findById(id));
+            return ResponseEntity.ok(service.findById(id).orElse(null));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
@@ -50,7 +50,6 @@ public class ZapisyRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.findById(id);
         service.wypiszStudenta(id);
         return ResponseEntity.noContent().build();
     }

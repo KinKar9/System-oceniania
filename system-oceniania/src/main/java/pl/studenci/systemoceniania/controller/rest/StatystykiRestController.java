@@ -7,6 +7,7 @@ import pl.studenci.systemoceniania.service.StatystykiService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/statystyki")
@@ -22,20 +23,20 @@ public class StatystykiRestController {
 
     @GetMapping("/srednia/{studentId}")
     public Map<String, Double> getSrednia(@PathVariable Long studentId) {
-        Double srednia = statystykiService.pobierzSredniaStudenta(studentId);
+        Optional<Double> srednia = statystykiService.pobierzSredniaStudenta(studentId);
         Map<String, Double> response = new HashMap<>();
-        response.put("srednia", srednia);
+        response.put("srednia", srednia.orElse(null));
         return response;
     }
 
     @PostMapping("/ranking")
     public void generujRanking(@RequestParam(required = false) String idSemestru) {
-        rankingService.generujRankingDoBazy(idSemestru);
+        rankingService.generateRanking(idSemestru);
     }
 
     @GetMapping("/ranking/ostatni")
     public Ranking getOstatniRanking() {
-        return rankingService.getLastRanking();
+        return rankingService.getLatestRanking().orElse(null);
     }
 
     @PostMapping("/sprawdz-zaliczenie/{studentId}")

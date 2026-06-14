@@ -16,7 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
-@Transactional   // ← klasa – domyślnie transakcje odczyt‑zapis
+@Transactional
 public class OcenaService {
 
     private static final Logger log = LoggerFactory.getLogger(OcenaService.class);
@@ -36,7 +36,6 @@ public class OcenaService {
         this.slownikOcenRepository = slownikOcenRepository;
     }
 
-    // Metody tylko do odczytu – jawnie readOnly
     @Transactional(readOnly = true)
     public List<Ocena> findAll() {
         return ocenaRepository.findAll();
@@ -46,7 +45,6 @@ public class OcenaService {
         return ocenaRepository.findAllSortedByPopularnoscPrzedmiotu();
     }
 
-    // zwraca oceny studenta z załadowanymi wszystkimi zależnościami
     @Transactional(readOnly = true)
     public List<Ocena> getOcenyStudenta(Long studentId) {
         if (studentId == null || studentId <= 0) {
@@ -61,21 +59,27 @@ public class OcenaService {
         }
     }
 
+    // Wersja bez daty – deleguje do tej z datą (dataOd = null)
     @Transactional(readOnly = true)
     public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId, String sortBy, String order) {
+        return filterAndSort(studentId, przedmiotId, typId, null, sortBy, order);
+    }
+
+    // Wersja z datą
+    @Transactional(readOnly = true)
+    public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId,
+                                     LocalDate dataOd, String sortBy, String order) {
         if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
         if (order == null || order.isEmpty()) order = "desc";
         try {
-            return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
+            return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
         } catch (Exception e) {
             log.error("Błąd podczas filtrowania i sortowania ocen: {}", e.getMessage(), e);
             throw new RuntimeException("Nie udało się przefiltrować ocen", e);
         }
     }
 
-    // Metody modyfikujące – dziedziczą @Transactional z klasy
     public Ocena save(Ocena ocena) {
-        // walidacja (bez zmian)
         if (ocena == null) {
             log.error("Próba zapisu null jako ocena");
             throw new IllegalArgumentException("Ocena nie może być nullem");
@@ -152,19 +156,13 @@ public class OcenaService {
         }
     }
 
-    public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId,
-                                     LocalDate dataOd, String sortBy, String order) {
-        if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
-        if (order == null || order.isEmpty()) order = "desc";
-        return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
+    public Ocena findById(Long id) {
+        return ocenaRepository.findById(id).orElse(null);
+    }
+
     private boolean isValidGrade(double value) {
         if (value < MIN_OCENA || value > MAX_OCENA) return false;
         double remainder = value % KROK;
         return Math.abs(remainder) < 0.0001 || Math.abs(remainder - KROK) < 0.0001;
     }
-
-    public Ocena findById(Long id) {
-        return ocenaRepository.findById(id).orElse(null);
-    }
-
 }
