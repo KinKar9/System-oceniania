@@ -1,5 +1,7 @@
 package pl.studenci.systemoceniania.controller;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import pl.studenci.systemoceniania.service.StudentService;
 import pl.studenci.systemoceniania.service.PrzedmiotService;
 import pl.studenci.systemoceniania.service.ZapisyService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 // POPRAWKA 1: Kontrola dostępu — tylko PRACOWNIK i ADMIN mogą zarządzać ocenami
@@ -49,8 +52,11 @@ public class OcenaController {
     public String list(@RequestParam(required = false) Long studentId,
                        @RequestParam(required = false) Long przedmiotId,
                        @RequestParam(required = false) Long typId,
-                       @RequestParam(defaultValue = "data") String sortBy,
-                       @RequestParam(defaultValue = "desc") String order,
+                       @RequestParam(required = false) LocalDate dataOd,
+                       @RequestParam(required = false) String sortBy,
+                       @RequestParam(required = false) String order,
+                       @CookieValue(name = "ocenySort", required = false) String cookieSort,
+                       HttpServletResponse response,
                        Model model) {
         try {
             List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
@@ -141,5 +147,12 @@ public class OcenaController {
             redirectAttributes.addFlashAttribute("error", "Nie można usunąć oceny.");
         }
         return "redirect:/oceny";
+    }
+
+    @GetMapping("/popularnosc")
+    public String listByPopularnosc(Model model) {
+        List<Ocena> oceny = ocenaService.findAllSortedByPopularnoscPrzedmiotu();
+        model.addAttribute("oceny", oceny);
+        return "oceny/lista";
     }
 }

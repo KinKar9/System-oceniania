@@ -42,6 +42,11 @@ public class OcenaService {
         return ocenaRepository.findAll();
     }
 
+    public List<Ocena> findAllSortedByPopularnoscPrzedmiotu() {
+        return ocenaRepository.findAllSortedByPopularnoscPrzedmiotu();
+    }
+
+    // zwraca oceny studenta z załadowanymi wszystkimi zależnościami
     @Transactional(readOnly = true)
     public List<Ocena> getOcenyStudenta(Long studentId) {
         if (studentId == null || studentId <= 0) {
@@ -147,9 +152,19 @@ public class OcenaService {
         }
     }
 
+    public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId,
+                                     LocalDate dataOd, String sortBy, String order) {
+        if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
+        if (order == null || order.isEmpty()) order = "desc";
+        return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
     private boolean isValidGrade(double value) {
         if (value < MIN_OCENA || value > MAX_OCENA) return false;
         double remainder = value % KROK;
         return Math.abs(remainder) < 0.0001 || Math.abs(remainder - KROK) < 0.0001;
     }
+
+    public Ocena findById(Long id) {
+        return ocenaRepository.findById(id).orElse(null);
+    }
+
 }
