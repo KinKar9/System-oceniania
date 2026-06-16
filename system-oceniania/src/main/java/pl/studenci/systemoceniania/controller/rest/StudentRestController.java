@@ -1,10 +1,15 @@
 package pl.studenci.systemoceniania.controller.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.studenci.systemoceniania.entity.Student;
 import pl.studenci.systemoceniania.service.StudentService;
+
 import java.util.List;
 
 @RestController
@@ -18,12 +23,19 @@ public class StudentRestController {
     }
 
     @GetMapping
-    public List<Student> getAll() {
-        return service.findAll();
+    @Operation(summary = "Pobiera wszystkich studentów")
+    @ApiResponse(responseCode = "200", description = "Lista studentów")
+    public ResponseEntity<List<Student>> getAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Student> getOne(@PathVariable Long id) {
+    @Operation(summary = "Pobiera studenta po ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Znaleziono studenta"),
+            @ApiResponse(responseCode = "404", description = "Student nie istnieje")
+    })
+    public ResponseEntity<Student> getOne(@Parameter(description = "ID studenta") @PathVariable Long id) {
         Student student = service.findById(id);
         if (student == null) {
             return ResponseEntity.notFound().build();
@@ -32,12 +44,22 @@ public class StudentRestController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Student create(@RequestBody Student student) {
-        return service.save(student);
+    @Operation(summary = "Tworzy nowego studenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Student utworzony"),
+            @ApiResponse(responseCode = "400", description = "Błędne dane")
+    })
+    public ResponseEntity<Student> create(@RequestBody Student student) {
+        Student saved = service.save(student);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Aktualizuje studenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Student zaktualizowany"),
+            @ApiResponse(responseCode = "404", description = "Student nie istnieje")
+    })
     public ResponseEntity<Student> update(@PathVariable Long id, @RequestBody Student student) {
         Student existing = service.findById(id);
         if (existing == null) {
@@ -53,7 +75,15 @@ public class StudentRestController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Usuwa studenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Usunięto"),
+            @ApiResponse(responseCode = "404", description = "Student nie istnieje")
+    })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (service.findById(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

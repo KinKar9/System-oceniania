@@ -1,5 +1,9 @@
 package pl.studenci.systemoceniania.controller.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,34 +27,32 @@ public class OcenaRestController {
         this.ocenaService = ocenaService;
     }
 
-    // Główny endpoint z filtrowaniem, sortowaniem i zapamiętywaniem sortowania w ciasteczku
     @GetMapping
-    public List<Ocena> getAll(
-            @RequestParam(required = false) Long studentId,
-            @RequestParam(required = false) Long przedmiotId,
-            @RequestParam(required = false) Long typId,
-            @RequestParam(required = false) LocalDate dataOd,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String order,
+    @Operation(summary = "Pobiera oceny z filtrowaniem i sortowaniem",
+            description = "Filtruje po studentId, przedmiotId, typId i dacie od. Sortowanie zapamiętywane w ciasteczku.")
+    @ApiResponse(responseCode = "200", description = "Lista ocen")
+    public ResponseEntity<List<Ocena>> getAll(
+            @Parameter(description = "ID studenta") @RequestParam(required = false) Long studentId,
+            @Parameter(description = "ID przedmiotu") @RequestParam(required = false) Long przedmiotId,
+            @Parameter(description = "ID typu oceny") @RequestParam(required = false) Long typId,
+            @Parameter(description = "Data od (domyślnie dzisiaj)") @RequestParam(required = false) LocalDate dataOd,
+            @Parameter(description = "Pole sortowania (np. data, wartosc)") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "Kierunek sortowania (asc/desc)") @RequestParam(required = false) String order,
             @CookieValue(name = "sortPreference", required = false) String cookieSort,
             HttpServletResponse response) {
 
-        // 1. Domyślne filtrowanie od aktualnej daty (jeśli nie podano)
         if (dataOd == null) {
             dataOd = LocalDate.now();
         }
 
-        // 2. Odczytanie preferencji sortowania z ciasteczka, jeśli nie podano parametrów
         if (sortBy == null && cookieSort != null && cookieSort.contains(",")) {
             String[] parts = cookieSort.split(",");
             sortBy = parts[0];
             order = parts.length > 1 ? parts[1] : "desc";
         }
-        // Domyślne wartości
         if (sortBy == null) sortBy = "data";
         if (order == null) order = "desc";
 
-        // 3. Zapisanie nowego ciasteczka (zawsze aktualizujemy, aby odzwierciedlić ostatnie sortowanie)
         ResponseCookie cookie = ResponseCookie.from("sortPreference", sortBy + "," + order)
                 .httpOnly(true)
                 .maxAge(Duration.ofDays(30))
@@ -58,23 +60,34 @@ public class OcenaRestController {
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
 
-        // Wywołanie serwisu
-        return ocenaService.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
+        List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
+        return ResponseEntity.ok(oceny);
     }
 
-    // Endpoint do sortowania według popularności przedmiotu (najwięcej ocen)
     @GetMapping("/popularne")
-    public List<Ocena> getSortedByPopularnoscPrzedmiotu() {
-        return ocenaService.findAllSortedByPopularnoscPrzedmiotu();
+    @Operation(summary = "Pobiera oceny posortowane według popularności przedmiotu")
+    @ApiResponse(responseCode = "200", description = "Lista ocen")
+    public ResponseEntity<List<Ocena>> getSortedByPopularnoscPrzedmiotu() {
+        return ResponseEntity.ok(ocenaService.findAllSortedByPopularnoscPrzedmiotu());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Ocena> getOne(@PathVariable Long id) {
+    @Operation(summary = "Pobiera ocenę po ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Znaleziono ocenę"),
+            @ApiResponse(responseCode = "404", description = "Ocena nie istnieje")
+    })
+    public ResponseEntity<Ocena> getOne(@Parameter(description = "ID oceny") @PathVariable Long id) {
         Ocena ocena = ocenaService.findById(id);
         return ocena != null ? ResponseEntity.ok(ocena) : ResponseEntity.notFound().build();
     }
 
     @PostMapping
+    @Operation(summary = "Tworzy nową ocenę")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Ocena utworzona"),
+            @ApiResponse(responseCode = "400", description = "Błędne dane")
+    })
     public ResponseEntity<?> create(@Valid @RequestBody Ocena ocena) {
         try {
             Ocena saved = ocenaService.save(ocena);
@@ -85,9 +98,17 @@ public class OcenaRestController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Aktualizuje ocenę")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ocena zaktualizowana"),
+            @ApiResponse(responseCode = "404", description = "Ocena nie istnieje"),
+            @ApiResponse(responseCode = "400", description = "Błędne dane")
+    })
     public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody Ocena ocenaDetails) {
         Ocena existing = ocenaService.findById(id);
-        if (existing == null) return ResponseEntity.notFound().build();
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
         existing.setWartosc(ocenaDetails.getWartosc());
         existing.setKomentarz(ocenaDetails.getKomentarz());
         if (ocenaDetails.getTyp() != null) existing.setTyp(ocenaDetails.getTyp());
@@ -103,7 +124,15 @@ public class OcenaRestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @Operation(summary = "Usuwa ocenę")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Usunięto"),
+            @ApiResponse(responseCode = "404", description = "Ocena nie istnieje")
+    })
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (ocenaService.findById(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
         ocenaService.delete(id);
         return ResponseEntity.noContent().build();
     }
