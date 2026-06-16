@@ -1,207 +1,143 @@
--- =====================================================
--- SKRYPT DANYCH TESTOWYCH (idempotentny, z transakcją, bez sztywnych ID)
--- =====================================================
--- Uruchomienie w bloku PL/SQL z obsługą błędów i transakcją
+BEGIN;
+
+-- 1. Role
+INSERT INTO rola (nazwa_roli) VALUES
+                                  ('ADMIN'),
+                                  ('PRACOWNIK'),
+                                  ('STUDENT');
+
+-- 2. Słownik ocen
+INSERT INTO slownik_ocen (nazwa, waga) VALUES
+                                           ('Kolokwium', 0.5),
+                                           ('Egzamin', 0.8),
+                                           ('Projekt', 0.4);
+
+-- 3. Pracownicy
+INSERT INTO pracownicy (imie, nazwisko, tytul_naukowy, email) VALUES
+                                                                  ('Andrzej', 'Kowalski', 'Dr inż.', 'andrzej.kowalski@uczelnia.pl'),
+                                                                  ('Maria', 'Zielińska', 'Prof. dr hab.', 'maria.zielinska@uczelnia.pl'),
+                                                                  ('Jan', 'Nowak', 'Mgr inż.', 'jan.nowak@uczelnia.pl'),
+                                                                  ('Krzysztof', 'Mazur', 'Dr hab.', 'krzysztof.mazur@uczelnia.pl'),
+                                                                  ('Barbara', 'Woźniak', 'Dr', 'barbara.wozniak@uczelnia.pl')
+    ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO pracownicy (imie, nazwisko, tytul_naukowy, email)
+SELECT
+    'Prac' || i,
+    'Nazwisko' || i,
+    CASE (i % 3)
+        WHEN 0 THEN 'Dr inż.'
+        WHEN 1 THEN 'Mgr'
+        ELSE 'Prof. dr hab.'
+        END,
+    'pracownik' || i || '@uczelnia.pl'
+FROM generate_series(6, 20) i
+    ON CONFLICT (email) DO NOTHING;
+
+-- 4. Sale
+INSERT INTO sale (numer_sali, pojemnosc, typ_sali) VALUES
+                                                       ('104-A', 30, 'LABORATORYJNA'),
+                                                       ('215-B', 120, 'WYKLADOWA'),
+                                                       ('03-Centrum', 15, 'SEMINARYJNA'),
+                                                       ('301-C', 45, 'WYKLADOWA'),
+                                                       ('111-A', 25, 'KOMPUTEROWA')
+    ON CONFLICT (numer_sali) DO NOTHING;
+
+
+-- 5. Kierunki
+
+INSERT INTO kierunki (nazwa, kod_kierunku, stopien, deleted)
+SELECT
+    'Kierunek ' || i,
+    'K' || LPAD(i::TEXT, 3, '0'),
+    CASE (i % 2)
+        WHEN 0 THEN 'INZYNIER_LICENCJAT'
+        ELSE 'MAGISTER'
+        END,
+    false
+FROM generate_series(1, 50) i
+    ON CONFLICT (kod_kierunku) DO NOTHING;
+
+-- 6. Przedmioty
+
+INSERT INTO przedmioty (kod_przedmiotu, nazwa, ects, kierunek_id)
+SELECT
+    k.kod_kierunku || '-' || LPAD(p.nr::TEXT, 2, '0'),
+    'Przedmiot ' || p.nr || ' (' || k.nazwa || ')',
+    3 + (random() * 7)::INT,
+    k.id_kierunku
+FROM kierunki k
+         CROSS JOIN LATERAL generate_series(1, floor(3 + random() * 3)::INT) AS p(nr)
+ON CONFLICT (kod_przedmiotu) DO NOTHING;
+
+
+-- 7. Grupy
+
+INSERT INTO grupy (nazwa_grupy, limit_miejsc, id_przedmiotu, id_pracownika)
+SELECT
+    p.kod_przedmiotu || '-G' || g.nr,
+    15 + (random() * 25)::INT,
+    p.id_przedmiotu,
+    (SELECT id_pracownika FROM pracownicy ORDER BY random() LIMIT 1)
+FROM przedmioty p
+    CROSS JOIN LATERAL generate_series(1, floor(1 + random() * 2)::INT) AS g(nr);
+
+
+-- 8. Studenci
+
+INSERT INTO studenci (imie, nazwisko, nr_indeksu, email, data_urodzenia, secure_token, czy_aktywny)
+SELECT
+    'Imię' || i,
+    'Nazwisko' || i,
+    's' || i,
+    'student' || i || '@student.uczelnia.pl',
+    ('1995-01-01'::DATE + (random() * 3650)::INT),
+    'token_' || i,
+    TRUE   -- ← dodaj aktywny status
+FROM generate_series(1, 300) i
+    ON CONFLICT (nr_indeksu) DO NOTHING;
+
+
+-- 9. Zapisy
+
+DO $$
 DECLARE
-v_student_id NUMBER;
-    v_grupa_id   NUMBER;
-    v_typ_kolokwium NUMBER;
-    v_typ_projekt NUMBER;
-
-    -- Stała data dla testów (zamiast SYSDATE)
-    v_test_date DATE := DATE '2025-01-15';
+s RECORD;
+    how_many INT;
+    g_ids INT[];
 BEGIN
-    -- Rozpoczęcie transakcji
-SAVEPOINT start_data;
+FOR s IN SELECT id_studenta FROM studenci LOOP
+    how_many := 1 + floor(random() * 3);   -- 1, 2 lub 3
+SELECT ARRAY_AGG(id_grupy ORDER BY random()) INTO g_ids
+FROM grupy
+         LIMIT how_many;
+FOR i IN 1..how_many LOOP
+            INSERT INTO zapisy (id_studenta, id_grupy, data_zapisu, status)
+            VALUES (s.id_studenta, g_ids[i], CURRENT_DATE - (random() * 180)::INT, 'AKTYWNY')
+            ON CONFLICT (id_studenta, id_grupy) DO NOTHING;
+END LOOP;
+END LOOP;
+END $$;
 
--- =====================================================
--- 1. KIERUNKI (wstaw tylko jeśli nie istnieją)
--- =====================================================
-MERGE INTO Kierunki k
-    USING (SELECT 'Informatyka Stosowana' AS nazwa, 'INF' AS kod, 1 AS stopien FROM DUAL UNION ALL
-           SELECT 'Automatyka i Robotyka', 'AUT', 1 FROM DUAL UNION ALL
-           SELECT 'Inżynieria Danych', 'DAT', 2 FROM DUAL UNION ALL
-           SELECT 'Cyberbezpieczeństwo', 'CYB', 1 FROM DUAL) src
-    ON (k.kod_kierunku = src.kod)
-    WHEN NOT MATCHED THEN
-        INSERT (nazwa, kod_kierunku, stopien) VALUES (src.nazwa, src.kod, src.stopien);
-
--- =====================================================
--- 2. PRZEDMIOTY (z użyciem podzapytań do pobrania ID kierunku)
--- =====================================================
-MERGE INTO Przedmioty p
-    USING (SELECT 'INF-01' AS kod, 'Programowanie Obiektowe' AS nazwa, 5 AS ects, 'INF' AS kod_kier FROM DUAL UNION ALL
-           SELECT 'INF-02', 'Bazy Danych', 6, 'INF' FROM DUAL UNION ALL
-           SELECT 'INF-03', 'Algorytmy i Struktury Danych', 5, 'INF' FROM DUAL UNION ALL
-           SELECT 'AUT-01', 'Teoria Sterowania', 5, 'AUT' FROM DUAL UNION ALL
-           SELECT 'AUT-02', 'Sensoryka i Aktuatory', 4, 'AUT' FROM DUAL UNION ALL
-           SELECT 'DAT-01', 'Analiza Statystyczna', 5, 'DAT' FROM DUAL UNION ALL
-           SELECT 'DAT-02', 'Hurtownie Danych', 6, 'DAT' FROM DUAL UNION ALL
-           SELECT 'CYB-01', 'Kryptografia', 5, 'CYB' FROM DUAL UNION ALL
-           SELECT 'CYB-02', 'Bezpieczeństwo Sieci', 5, 'CYB' FROM DUAL) src
-    ON (p.kod_przedmiotu = src.kod)
-    WHEN NOT MATCHED THEN
-        INSERT (kod_przedmiotu, nazwa, ects, kierunek_id)
-            VALUES (src.kod, src.nazwa, src.ects, (SELECT id_kierunku FROM Kierunki WHERE kod_kierunku = src.kod_kier));
-
--- =====================================================
--- 3. PRACOWNICY (wstaw tylko jeśli brak email)
--- =====================================================
-MERGE INTO Pracownicy p
-    USING (SELECT 'andrzej.kowalski@uczelnia.pl' AS email, 'Andrzej' AS imie, 'Kowalski' AS nazwisko, 'Dr inż.' AS tytul FROM DUAL UNION ALL
-           SELECT 'maria.zielinska@uczelnia.pl', 'Maria', 'Zielińska', 'Prof. dr hab.' FROM DUAL UNION ALL
-           SELECT 'jan.nowak@uczelnia.pl', 'Jan', 'Nowak', 'Mgr inż.' FROM DUAL UNION ALL
-           SELECT 'krzysztof.mazur@uczelnia.pl', 'Krzysztof', 'Mazur', 'Dr hab.' FROM DUAL UNION ALL
-           SELECT 'barbara.wozniak@uczelnia.pl', 'Barbara', 'Woźniak', 'Dr' FROM DUAL) src
-    ON (p.email = src.email)
-    WHEN NOT MATCHED THEN
-        INSERT (imie, nazwisko, tytul_naukowy, email) VALUES (src.imie, src.nazwisko, src.tytul, src.email);
-
--- =====================================================
--- 4. SALE (wstaw tylko jeśli nie istnieje numer sali)
--- =====================================================
-MERGE INTO Sale s
-    USING (SELECT '104-A (Laboratorium)' AS numer, 30 AS poj FROM DUAL UNION ALL
-           SELECT '215-B (Aula)', 120 FROM DUAL UNION ALL
-           SELECT '03-Centrum', 15 FROM DUAL UNION ALL
-           SELECT '301-C', 45 FROM DUAL UNION ALL
-           SELECT '111-A', 25 FROM DUAL) src
-    ON (s.numer_sali = src.numer)
-    WHEN NOT MATCHED THEN
-        INSERT (numer_sali, pojemnosc) VALUES (src.numer, src.poj);
-
--- =====================================================
--- 5. GRUPY (użycie podzapytań zamiast sztywnych ID)
--- =====================================================
--- Grupa 1: INF-01, pracownik o emailu andrzej.kowalski@uczelnia.pl
-INSERT INTO Grupy (nazwa_grupy, id_przedmiotu, id_pracownika)
-SELECT 'Grupa IO-11 (Rok 1)', p.id_przedmiotu, pr.id_pracownika
-FROM Przedmioty p, Pracownicy pr
-WHERE p.kod_przedmiotu = 'INF-01' AND pr.email = 'andrzej.kowalski@uczelnia.pl'
-  AND NOT EXISTS (SELECT 1 FROM Grupy g WHERE g.nazwa_grupy = 'Grupa IO-11 (Rok 1)');
-
-INSERT INTO Grupy (nazwa_grupy, id_przedmiotu, id_pracownika)
-SELECT 'Grupa IO-12 (Rok 1)', p.id_przedmiotu, pr.id_pracownika
-FROM Przedmioty p, Pracownicy pr
-WHERE p.kod_przedmiotu = 'INF-02' AND pr.email = 'maria.zielinska@uczelnia.pl'
-  AND NOT EXISTS (SELECT 1 FROM Grupy g WHERE g.nazwa_grupy = 'Grupa IO-12 (Rok 1)');
-
-INSERT INTO Grupy (nazwa_grupy, id_przedmiotu, id_pracownika)
-SELECT 'Grupa AR-21 (Rok 2)', p.id_przedmiotu, pr.id_pracownika
-FROM Przedmioty p, Pracownicy pr
-WHERE p.kod_przedmiotu = 'AUT-01' AND pr.email = 'jan.nowak@uczelnia.pl'
-  AND NOT EXISTS (SELECT 1 FROM Grupy g WHERE g.nazwa_grupy = 'Grupa AR-21 (Rok 2)');
-
-INSERT INTO Grupy (nazwa_grupy, id_przedmiotu, id_pracownika)
-SELECT 'Grupa ID-31 (Rok 3)', p.id_przedmiotu, pr.id_pracownika
-FROM Przedmioty p, Pracownicy pr
-WHERE p.kod_przedmiotu = 'DAT-01' AND pr.email = 'krzysztof.mazur@uczelnia.pl'
-  AND NOT EXISTS (SELECT 1 FROM Grupy g WHERE g.nazwa_grupy = 'Grupa ID-31 (Rok 3)');
-
-INSERT INTO Grupy (nazwa_grupy, id_przedmiotu, id_pracownika)
-SELECT 'Grupa CYB-11 (Rok 1)', p.id_przedmiotu, pr.id_pracownika
-FROM Przedmioty p, Pracownicy pr
-WHERE p.kod_przedmiotu = 'CYB-01' AND pr.email = 'barbara.wozniak@uczelnia.pl'
-  AND NOT EXISTS (SELECT 1 FROM Grupy g WHERE g.nazwa_grupy = 'Grupa CYB-11 (Rok 1)');
-
--- =====================================================
--- 6. STUDENCI (usuwanie tylko dla zachowania czystości, ale lepiej MERGE)
--- =====================================================
--- Usuwamy starego studenta (jeśli istnieje) aby uniknąć konfliktu email/indeks
-DELETE FROM STUDENCI WHERE email = 'student' OR nr_indeksu = 's12345';
-
-INSERT INTO STUDENCI (imie, nazwisko, nr_indeksu, email, data_urodzenia, secure_token)
-VALUES ('Jan', 'Kowalski', 's12345', 'student', DATE '2000-01-01', 'temp123');
-
--- =====================================================
--- 7. UZYTKOWNICY, ROLE, UZYTKOWNICY_ROLE (idempotentnie)
--- =====================================================
-    /*
--- Usuwamy stare powiązania
-DELETE FROM Uzytkownicy_Role WHERE id_uzytkownika IN (SELECT id_uzytkownika FROM Uzytkownicy WHERE username = 'student');
-DELETE FROM Uzytkownicy WHERE username = 'student';
-DELETE FROM Role WHERE nazwa_roli = 'STUDENT';
-
-INSERT INTO Uzytkownicy (username, password, email, czy_aktywny)
-VALUES ('student', 'student123', 'student', 'T');
-
-INSERT INTO Role (nazwa_roli) VALUES ('STUDENT');
-
-INSERT INTO Uzytkownicy_Role (id_uzytkownika, id_roli)
-SELECT u.id_uzytkownika, r.id_roli
-FROM Uzytkownicy u, Role r
-WHERE u.username = 'student' AND r.nazwa_roli = 'STUDENT';
-     */
--- =====================================================
--- 8. SŁOWNIK OCEN (tylko jeśli brak)
--- =====================================================
-MERGE INTO Slownik_Ocen s
-    USING (SELECT 'Kolokwium' AS nazwa, 0.5 AS waga FROM DUAL UNION ALL
-           SELECT 'Egzamin', 0.8 FROM DUAL UNION ALL
-           SELECT 'Projekt', 0.4 FROM DUAL) src
-    ON (s.nazwa = src.nazwa)
-    WHEN NOT MATCHED THEN
-        INSERT (nazwa, waga) VALUES (src.nazwa, src.waga);
-
--- Pobranie ID typów ocen do zmiennych (do późniejszego użycia)
+-- 10. Oceny
+DO $$
+DECLARE
+z RECORD;
+    t_id INT;
+    grade_val NUMERIC(2,1);
 BEGIN
-SELECT id_typu INTO v_typ_kolokwium FROM Slownik_Ocen WHERE nazwa = 'Kolokwium';
-SELECT id_typu INTO v_typ_projekt FROM Slownik_Ocen WHERE nazwa = 'Projekt';
-EXCEPTION WHEN NO_DATA_FOUND THEN
-        v_typ_kolokwium := NULL;
-        v_typ_projekt := NULL;
-END;
+FOR z IN SELECT id_zapisu, data_zapisu FROM zapisy LOOP
+SELECT id_typu INTO t_id FROM slownik_ocen ORDER BY random() LIMIT 1;
+grade_val := 2.0 + (random() * 3)::NUMERIC(2,1);
+INSERT INTO oceny (id_zapisu, id_typu, wartosc, data_wystawienia, komentarz)
+VALUES (
+           z.id_zapisu,
+           t_id,
+           grade_val,
+           z.data_zapisu + (random() * (CURRENT_DATE - z.data_zapisu))::INT,
+           'Wygenerowana ocena'
+       ) ON CONFLICT (id_zapisu, id_typu) DO NOTHING;
+END LOOP;
+END $$;
 
-    -- =====================================================
-    -- 9. ZAPISY i OCENY (tylko jeśli jeszcze nie istnieją)
-    -- =====================================================
-    -- Zapisz studenta do grupy (jeśli jeszcze nie zapisany)
-INSERT INTO Zapisy (id_studenta, id_grupy, data_zapisu, status)
-SELECT s.id_studenta, g.id_grupy, v_test_date, 'Aktywny'
-FROM STUDENCI s, GRUPY g
-WHERE s.email = 'student'
-  AND g.nazwa_grupy = 'Grupa IO-12 (Rok 1)'
-  AND NOT EXISTS (
-    SELECT 1 FROM Zapisy z
-    WHERE z.id_studenta = s.id_studenta AND z.id_grupy = g.id_grupy
-);
-
--- Pobranie ID zapisu
-SELECT z.id_zapisu INTO v_grupa_id
-FROM Zapisy z
-         JOIN STUDENCI s ON z.id_studenta = s.id_studenta
-         JOIN GRUPY g ON z.id_grupy = g.id_grupy
-WHERE s.email = 'student' AND g.nazwa_grupy = 'Grupa IO-12 (Rok 1)'
-  AND ROWNUM = 1;
-
--- Wystaw ocenę (Kolokwium) jeśli jeszcze nie ma
-IF v_typ_kolokwium IS NOT NULL THEN
-        INSERT INTO Oceny (id_zapisu, id_typu, wartosc, data_wystawienia, komentarz)
-SELECT v_grupa_id, v_typ_kolokwium, 4.5, v_test_date, 'Przykładowa ocena z Baz Danych'
-FROM DUAL
-WHERE NOT EXISTS (
-    SELECT 1 FROM Oceny WHERE id_zapisu = v_grupa_id AND id_typu = v_typ_kolokwium
-);
-END IF;
-
-    -- Wystaw drugą ocenę (Projekt)
-    IF v_typ_projekt IS NOT NULL THEN
-        INSERT INTO Oceny (id_zapisu, id_typu, wartosc, data_wystawienia, komentarz)
-SELECT v_grupa_id, v_typ_projekt, 5.0, v_test_date, 'Projekt zaliczony'
-FROM DUAL
-WHERE NOT EXISTS (
-    SELECT 1 FROM Oceny WHERE id_zapisu = v_grupa_id AND id_typu = v_typ_projekt
-);
-END IF;
-
-    -- Zatwierdzenie wszystkich zmian
 COMMIT;
-DBMS_OUTPUT.PUT_LINE('Dane testowe zostały pomyślnie wstawione.');
-
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK TO start_data;
-        DBMS_OUTPUT.PUT_LINE('Błąd podczas wstawiania danych: ' || SQLERRM);
-        RAISE;
-END;
-/

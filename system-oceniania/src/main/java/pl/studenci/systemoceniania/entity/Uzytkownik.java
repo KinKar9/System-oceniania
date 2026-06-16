@@ -11,59 +11,63 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+// DODANE IMPORTY:
+import pl.studenci.systemoceniania.entity.Rola;
+import pl.studenci.systemoceniania.entity.Student;
+
 @Entity
-@Table(name = "UZYTKOWNICY")
+@Table(name = "uzytkownicy")
 public class Uzytkownik {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_UZYTKOWNIKA", updatable = false)
+    @Column(name = "id_uzytkownika", updatable = false)
     private Long id;
 
     @NotBlank(message = "Nazwa użytkownika jest wymagana")
     @Size(min = 3, max = 50, message = "Nazwa musi mieć od 3 do 50 znaków")
-    @Column(name = "USERNAME", nullable = false, unique = true, length = 50)
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
 
     @NotBlank(message = "Hasło jest wymagane")
     @Size(min = 4, message = "Hasło musi mieć co najmniej 4 znaki")
     @JsonIgnore
-    @Column(name = "PASSWORD", nullable = false, length = 255)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
     @NotBlank(message = "Email jest wymagany")
     @Email(message = "Nieprawidłowy format email")
     @Size(max = 100, message = "Email może mieć maksymalnie 100 znaków")
-    @Column(name = "EMAIL", nullable = false, unique = true, length = 100)
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
     @NotNull(message = "Pole aktywności jest wymagane")
-    @Column(name = "CZY_AKTYWNY", nullable = false)
+    @Column(name = "czy_aktywny", nullable = false)
     private boolean czyAktywny = true;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "UZYTKOWNICY_ROLE",
-            joinColumns = @JoinColumn(name = "ID_UZYTKOWNIKA"),
-            inverseJoinColumns = @JoinColumn(name = "ID_ROLI"))
+    @JoinTable(name = "uzytkownicy_role",
+            joinColumns = @JoinColumn(name = "id_uzytkownika"),
+            inverseJoinColumns = @JoinColumn(name = "id_roli"))
     @JsonIgnoreProperties("uzytkownicy")
     private Set<Rola> role = new HashSet<>();
 
-    // Relacja do studenta — null dla admin i pracownik, wypełniona dla kont studenckich
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_STUDENTA", nullable = true)
+    @JoinColumn(name = "id_studenta", nullable = true)
     @JsonIgnore
     private Student student;
 
     @CreationTimestamp
-    @Column(name = "DATA_UTWORZENIA", updatable = false)
+    @Column(name = "data_utworzenia", updatable = false)
     private LocalDateTime dataUtworzenia;
 
     @UpdateTimestamp
-    @Column(name = "DATA_AKTUALIZACJI")
+    @Column(name = "data_aktualizacji")
     private LocalDateTime dataAktualizacji;
 
     public Uzytkownik() {}
 
+    // gettery i settery (bez zmian)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

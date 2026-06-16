@@ -5,47 +5,46 @@ import jakarta.validation.constraints.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import pl.studenci.systemoceniania.entity.Grupa;
 
 @Entity
-@Table(name = "PRACOWNICY")
+@Table(name = "pracownicy")
 public class Pracownik {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_PRACOWNIKA", updatable = false)
+    @Column(name = "id_pracownika", updatable = false)
     private Long id;
 
     @NotBlank(message = "Imię jest wymagane")
     @Size(max = 50, message = "Imię może mieć maksymalnie 50 znaków")
-    @Column(name = "IMIE", nullable = false, length = 50)
+    @Column(name = "imie", nullable = false, length = 50)
     private String imie;
 
     @NotBlank(message = "Nazwisko jest wymagane")
     @Size(max = 100, message = "Nazwisko może mieć maksymalnie 100 znaków")
-    @Column(name = "NAZWISKO", nullable = false, length = 100)
+    @Column(name = "nazwisko", nullable = false, length = 100)
     private String nazwisko;
 
     @Size(min = 2, max = 50, message = "Tytuł naukowy może mieć od 2 do 50 znaków")
-    @Column(name = "TYTUL_NAUKOWY", length = 50)
+    @Column(name = "tytul_naukowy", length = 50)
     private String tytulNaukowy;
 
     @NotBlank(message = "Email jest wymagany")
     @Email(message = "Nieprawidłowy format email")
     @Size(max = 100, message = "Email może mieć maksymalnie 100 znaków")
-    @Column(name = "EMAIL", nullable = false, unique = true, length = 100)
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    // Dodano cascade i orphanRemoval dla poprawnych operacji kaskadowych
     @OneToMany(mappedBy = "pracownik", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Grupa> grupy = new ArrayList<>();
 
     @Version
-    @Column(name = "WERSJA")
+    @Column(name = "wersja")
     private Integer version;
 
     public Pracownik() {}
 
-    // Metody pomocnicze do zarządzania relacją z grupami
     public void addGrupa(Grupa grupa) {
         grupy.add(grupa);
         grupa.setPracownik(this);
@@ -56,7 +55,6 @@ public class Pracownik {
         grupa.setPracownik(null);
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getImie() { return imie; }

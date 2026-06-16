@@ -29,7 +29,6 @@ public class ZapisyService {
         this.grupaRepository = grupaRepository;
     }
 
-    // Metody odczytu – mogą być readOnly
     @Transactional(readOnly = true)
     public List<Zapisy> findAll() {
         return zapisyRepository.findAll();
@@ -49,11 +48,10 @@ public class ZapisyService {
         if (studentId == null || grupaId == null) {
             return false;
         }
-        return zapisyRepository.findByStudentIdAndGrupaId(studentId, grupaId).isPresent();
+        return zapisyRepository.findByStudent_IdAndGrupa_Id(studentId, grupaId).isPresent();
     }
 
     public Zapisy zapiszStudenta(Long studentId, Long grupaId) {
-        // Walidacja parametrów
         if (studentId == null || grupaId == null) {
             throw new IllegalArgumentException("ID studenta i grupy nie mogą być null");
         }
@@ -70,16 +68,14 @@ public class ZapisyService {
                     return new IllegalArgumentException("Grupa o podanym ID nie istnieje");
                 });
 
-        // Sprawdzenie, czy student już zapisany
         if (czyStudentZapisany(studentId, grupaId)) {
             log.warn("Student {} już zapisany do grupy {}", studentId, grupaId);
             throw new IllegalStateException("Student jest już zapisany do tej grupy");
         }
 
-        // Sprawdzenie limitu miejsc
         Integer limit = grupa.getLimitMiejsc();
         if (limit != null && limit > 0) {
-            long obecnaLiczba = zapisyRepository.countByGrupaId(grupaId);
+            long obecnaLiczba = zapisyRepository.countByGrupa_Id(grupaId);   // zmiana nazwy
             if (obecnaLiczba >= limit) {
                 log.warn("Brak wolnych miejsc w grupie {} (limit: {}, obecnie: {})", grupaId, limit, obecnaLiczba);
                 throw new IllegalStateException("Brak wolnych miejsc w grupie");
@@ -111,7 +107,28 @@ public class ZapisyService {
                     return new IllegalArgumentException("Zapis o podanym ID nie istnieje");
                 });
         zapis.setStatus(Zapisy.StatusZapisu.ANULOWANY);
+        zapisyRepository.save(zapis); // POPRAWA: zapisanie zmiany w bazie
         log.info("Student {} wypisany z grupy {} (zapis ID: {})",
                 zapis.getStudent().getId(), zapis.getGrupa().getId(), zapisId);
+    }
+    @Transactional
+    public void delete(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Nieprawidłowe ID zapisu");
+        }
+        if (!zapisyRepository.existsById(id)) {
+            throw new IllegalArgumentException("Zapis o podanym ID nie istnieje");
+        }
+        try {
+            zapisyRepository.deleteById(id);
+            log.info("Usunięto zapis o ID: {}", id);
+        } catch (Exception e) {
+            log.error("Błąd podczas usuwania zapisu {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Nie udało się usunąć zapisu", e);
+        }
+    }
+    @Transactional(readOnly = true)
+    public List<Zapisy> findAllActive() {
+        return zapisyRepository.findByStatus(Zapisy.StatusZapisu.AKTYWNY);
     }
 }

@@ -1,49 +1,54 @@
 package pl.studenci.systemoceniania.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+// BRAKUJĄCY IMPORT:
+import pl.studenci.systemoceniania.entity.Zapisy;
+
 @Entity
-@Table(name = "GRUPY", indexes = {
+@Table(name = "grupy", indexes = {
         @Index(name = "idx_grupy_przedmiot", columnList = "id_przedmiotu"),
         @Index(name = "idx_grupy_pracownik", columnList = "id_pracownika")
 })
 public class Grupa {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_GRUPY", updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "grupy_seq")
+    @SequenceGenerator(name = "grupy_seq", sequenceName = "grupy_seq", allocationSize = 1)
+    @Column(name = "id_grupy", updatable = false)
     private Long id;
 
     @NotBlank(message = "Nazwa grupy jest wymagana")
     @Size(max = 50, message = "Nazwa grupy może mieć maksymalnie 50 znaków")
-    @Column(name = "NAZWA_GRUPY", nullable = false, length = 50)
+    @Column(name = "nazwa_grupy", nullable = false, length = 50)
     private String nazwaGrupy;
 
     @PositiveOrZero(message = "Limit miejsc nie może być ujemny")
-    @Column(name = "LIMIT_MIEJSC")
+    @Column(name = "limit_miejsc")
     private Integer limitMiejsc;
 
     @NotNull(message = "Przedmiot jest wymagany")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_PRZEDMIOTU", nullable = false)
+    @JoinColumn(name = "id_przedmiotu", nullable = false)
     private Przedmiot przedmiot;
 
     @NotNull(message = "Pracownik jest wymagany")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_PRACOWNIKA", nullable = false)
+    @JoinColumn(name = "id_pracownika", nullable = false)
     private Pracownik pracownik;
 
-    // Cascade tylko PERSIST i MERGE – bez REMOVE (bezpieczniej)
+    // ZAPOBIEGA CYkLICZNEJ SERIALIZACJI JSON
+    @JsonIgnore
     @OneToMany(mappedBy = "grupa", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<Zapisy> zapisy = new ArrayList<>();
 
     public Grupa() {}
 
-    // Metody pomocnicze do zarządzania relacją z zapisami
     public void addZapis(Zapisy zapis) {
         zapisy.add(zapis);
         zapis.setGrupa(this);
@@ -54,7 +59,6 @@ public class Grupa {
         zapis.setGrupa(null);
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNazwaGrupy() { return nazwaGrupy; }

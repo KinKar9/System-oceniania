@@ -25,11 +25,9 @@ public class ZapisyRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Zapisy> getOne(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(service.findById(id).orElse(null));
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+        return service.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/zapisz")
@@ -44,13 +42,19 @@ public class ZapisyRestController {
 
     @PutMapping("/wypisz/{id}")
     public ResponseEntity<Void> wypiszStudenta(@PathVariable Long id) {
+        if (service.findById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         service.wypiszStudenta(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.wypiszStudenta(id);
+        if (service.findById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        service.delete(id);   // wymaga metody delete w ZapisyService (dodajemy osobno)
         return ResponseEntity.noContent().build();
     }
 }

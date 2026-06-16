@@ -19,11 +19,12 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByEmailWithZapisy(@Param("email") String email);
 
     @Query("""
-        SELECT s FROM Student s
+        SELECT DISTINCT s FROM Student s
         LEFT JOIN FETCH s.zapisy z
         LEFT JOIN FETCH z.oceny
         WHERE s.secureToken = :token
         """)
     Optional<Student> findBySecureTokenWithOceny(@Param("token") String token);
+
     Optional<Student> findByNrIndeksu(String nrIndeksu);
 }

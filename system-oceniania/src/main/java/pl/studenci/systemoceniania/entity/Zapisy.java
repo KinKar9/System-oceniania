@@ -8,49 +8,47 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "ZAPISY",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"ID_STUDENTA", "ID_GRUPY"})})
+@Table(name = "zapisy",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"id_studenta", "id_grupy"})})
 public class Zapisy {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_ZAPISU", updatable = false)
+    @Column(name = "id_zapisu", updatable = false)
     private Long id;
 
     @NotNull(message = "Student jest wymagany")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_STUDENTA", nullable = false)
+    @JoinColumn(name = "id_studenta", nullable = false)
     private Student student;
 
     @NotNull(message = "Grupa jest wymagana")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_GRUPY", nullable = false)
+    @JoinColumn(name = "id_grupy", nullable = false)
     private Grupa grupa;
 
     @PastOrPresent(message = "Data zapisu nie może być z przyszłości")
-    @Column(name = "DATA_ZAPISU", nullable = false)
+    @Column(name = "data_zapisu", nullable = false)
     private LocalDate dataZapisu = LocalDate.now();
 
     @NotNull(message = "Status jest wymagany")
     @Enumerated(EnumType.STRING)
-    @Column(name = "STATUS", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private StatusZapisu status = StatusZapisu.AKTYWNY;
 
     @OneToMany(mappedBy = "zapis", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ocena> oceny = new ArrayList<>();
 
     @Version
-    @Column(name = "WERSJA")
+    @Column(name = "wersja")
     private Integer version;
 
-    // Enum dla statusu
     public enum StatusZapisu {
         AKTYWNY, ZAKONCZONY, ANULOWANY
     }
 
     public Zapisy() {}
 
-    // Metody pomocnicze do zarządzania kolekcją ocen
     public void addOcena(Ocena ocena) {
         oceny.add(ocena);
         ocena.setZapis(this);
@@ -61,7 +59,6 @@ public class Zapisy {
         ocena.setZapis(null);
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Student getStudent() { return student; }
@@ -87,7 +84,8 @@ public class Zapisy {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        // POPRAWKA: używamy id do generowania hash code – unikamy stałej wartości
+        return Objects.hash(id);
     }
 
     @Override

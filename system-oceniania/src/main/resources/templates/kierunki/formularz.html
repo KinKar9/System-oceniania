@@ -30,7 +30,7 @@
             width: 120px;
             font-weight: bold;
         }
-        input {
+        input, select {
             padding: 6px;
             width: 200px;
             border: 1px solid #ccc;
@@ -102,8 +102,11 @@
         </div>
 
         <div class="form-group">
-            <label for="stopien">Stopień (1 lub 2):</label>
-            <input type="number" id="stopien" th:field="*{stopien}" min="1" max="2" required />
+            <label for="stopien">Stopień:</label>
+            <select id="stopien" th:field="*{stopien}" required>
+                <option th:value="INZYNIER_LICENCJAT">I stopień (licencjat/inżynier)</option>
+                <option th:value="MAGISTER">II stopień (magister)</option>
+            </select>
             <span th:if="${#fields.hasErrors('stopien')}" th:errors="*{stopien}" class="error-message"></span>
         </div>
 

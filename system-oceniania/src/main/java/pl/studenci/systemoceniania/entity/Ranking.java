@@ -5,27 +5,31 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+// BRAKUJĄCY IMPORT:
+import pl.studenci.systemoceniania.entity.Semestr;
+
 @Entity
-@Table(name = "RANKINGI", indexes = {
+@Table(name = "rankingi", indexes = {
         @Index(name = "idx_ranking_semestr", columnList = "semestr_id"),
-        @Index(name = "idx_ranking_data", columnList = "dataGenerowania")
+        @Index(name = "idx_ranking_data", columnList = "data_generowania")
 })
 public class Ranking {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_RANKINGU", updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ranking_seq")
+    @SequenceGenerator(name = "ranking_seq", sequenceName = "ranking_seq", allocationSize = 1)
+    @Column(name = "id_rankingu", updatable = false)
     private Long id;
 
     @NotNull(message = "Semestr jest wymagany")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SEMESTR_ID", nullable = false)
+    @JoinColumn(name = "semestr_id", nullable = false)
     private Semestr semestr;
 
-    @Column(name = "DATA_GENEROWANIA", nullable = false, updatable = false)
+    @Column(name = "data_generowania", nullable = false, updatable = false)
     private LocalDateTime dataGenerowania;
 
-    @Column(name = "DANE_RANKINGU", columnDefinition = "CLOB")
+    @Column(name = "dane_rankingu", columnDefinition = "TEXT")
     private String daneRankingu;
 
     public Ranking() {}

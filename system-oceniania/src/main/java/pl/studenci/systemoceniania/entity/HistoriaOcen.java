@@ -5,40 +5,39 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Objects;
+import pl.studenci.systemoceniania.entity.Ocena;
 
 @Entity
-@Table(name = "HISTORIA_OCEN")
+@Table(name = "historia_ocen")
 public class HistoriaOcen {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_HISTORII", updatable = false)
+    @Column(name = "id_historii", updatable = false)
     private Long id;
 
-    // Relacja z encją Ocena – zamiast Long
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_OCENY", nullable = false)
+    @JoinColumn(name = "id_oceny", nullable = false)
     private Ocena ocena;
 
-    @Column(name = "STARA_WARTOSC")
+    @Column(name = "stara_wartosc")
     private Double staraWartosc;
 
-    @Column(name = "NOWA_WARTOSC")
+    @Column(name = "nowa_wartosc")
     private Double nowaWartosc;
 
-    @Column(name = "DATA_MODYFIKACJI", nullable = false)
+    @Column(name = "data_modyfikacji", nullable = false)
     private LocalDate dataModyfikacji;
 
     @Size(max = 50)
-    @Column(name = "UZYTKOWNIK", length = 50)
+    @Column(name = "uzytkownik", length = 50)
     private String uzytkownik;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "OPERACJA", nullable = false, length = 20)
+    @Column(name = "operacja", nullable = false, length = 20)
     private Operacja operacja;
 
-    // Enum dla dozwolonych operacji
     public enum Operacja {
         INSERT, UPDATE, DELETE
     }

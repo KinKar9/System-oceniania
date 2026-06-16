@@ -19,26 +19,17 @@ public class StatystykiService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    /**
-     * Sprawdza i aktualizuje zaliczenie dla wszystkich zapisów danego studenta.
-     * Uruchamia procedurę składowaną PKG_OCENY.SPRAWDZ_ZALICZENIE.
-     *
-     * @param studentId identyfikator studenta (nie może być null)
-     * @throws IllegalArgumentException jeśli studentId jest null lub <= 0
-     * @throws RuntimeException jeśli wystąpi błąd podczas wywołania procedury
-     */
     @Transactional
     public void sprawdzZaliczenie(Long studentId) {
-        // Walidacja parametru
         if (studentId == null || studentId <= 0) {
             log.warn("Próba sprawdzenia zaliczenia z nieprawidłowym studentId: {}", studentId);
             throw new IllegalArgumentException("Identyfikator studenta musi być dodatni i niepusty");
         }
 
         try {
-            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("PKG_OCENY.SPRAWDZ_ZALICZENIE");
-            query.registerStoredProcedureParameter(1, Long.class, ParameterMode.IN);
-            query.setParameter(1, studentId);
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sprawdz_zaliczenie");
+            query.registerStoredProcedureParameter("p_id_studenta", Long.class, ParameterMode.IN);
+            query.setParameter("p_id_studenta", studentId);
             query.execute();
             log.info("Sprawdzono zaliczenie dla studenta o ID: {}", studentId);
         } catch (Exception e) {
@@ -47,14 +38,6 @@ public class StatystykiService {
         }
     }
 
-    /**
-     * Pobiera średnią ważoną ocen dla podanego studenta.
-     * W przypadku braku ocen zwraca Optional.empty().
-     *
-     * @param studentId identyfikator studenta (nie może być null)
-     * @return Optional z wartością średniej (lub pusty, gdy brak ocen lub błąd)
-     * @throws IllegalArgumentException jeśli studentId jest null lub <= 0
-     */
     @Transactional(readOnly = true)
     public Optional<Double> pobierzSredniaStudenta(Long studentId) {
         if (studentId == null || studentId <= 0) {
@@ -63,7 +46,7 @@ public class StatystykiService {
         }
 
         try {
-            String sql = "SELECT PKG_OCENY.SREDNIA_STUDENTA(?1) FROM DUAL";
+            String sql = "SELECT srednia_studenta(?1)";
             Object result = entityManager.createNativeQuery(sql)
                     .setParameter(1, studentId)
                     .getSingleResult();
@@ -90,16 +73,10 @@ public class StatystykiService {
         }
     }
 
-    /**
-     * Generuje ranking studentów i wypisuje go do konsoli bazy danych (DBMS_OUTPUT).
-     * Uruchamia procedurę składowaną PKG_OCENY.RANKING_STUDENTOW.
-     *
-     * @throws RuntimeException jeśli wystąpi błąd podczas wywołania procedury
-     */
     @Transactional
     public void generujRankingWKonsoliBazy() {
         try {
-            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("PKG_OCENY.RANKING_STUDENTOW");
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("ranking_studentow");
             query.execute();
             log.info("Ranking studentów został wygenerowany w konsoli bazy danych.");
         } catch (Exception e) {

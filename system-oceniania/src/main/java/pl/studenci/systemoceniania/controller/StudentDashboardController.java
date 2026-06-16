@@ -19,7 +19,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/student")
-@PreAuthorize("isAuthenticated()")
+@PreAuthorize("hasRole('STUDENT')")
 public class StudentDashboardController {
 
     private static final Logger log = LoggerFactory.getLogger(StudentDashboardController.class);
@@ -86,6 +86,10 @@ public class StudentDashboardController {
 
     private Student pobierzStudentaZAuth(Authentication auth) {
         Uzytkownik uzytkownik = uzytkownikService.findByUsername(auth.getName());
+        if (uzytkownik == null) {
+            log.warn("Nie znaleziono użytkownika o nazwie: {}", auth.getName());
+            return null;
+        }
         Student student = uzytkownik.getStudent();
         if (student == null) {
             log.warn("Użytkownik '{}' nie ma powiązanego studenta", auth.getName());

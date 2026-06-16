@@ -7,37 +7,42 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import pl.studenci.systemoceniania.entity.Przedmiot;
+
 @Entity
-@Table(name = "KIERUNKI")
+@Table(name = "kierunki")
 public class Kierunek {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_KIERUNKU", updatable = false)
+    @Column(name = "id_kierunku", updatable = false)
     private Long id;
 
     @NotBlank(message = "Nazwa kierunku jest wymagana")
     @Size(max = 150, message = "Nazwa może mieć maksymalnie 150 znaków")
-    @Column(name = "NAZWA", nullable = false, unique = true, length = 150)
+    @Column(name = "nazwa", nullable = false, unique = true, length = 150)
     private String nazwa;
 
     @NotBlank(message = "Kod kierunku jest wymagany")
     @Size(max = 10, message = "Kod może mieć maksymalnie 10 znaków")
     @Pattern(regexp = "^[A-Z0-9]+$", message = "Kod może zawierać tylko duże litery i cyfry")
-    @Column(name = "KOD_KIERUNKU", nullable = false, unique = true, length = 10)
+    @Column(name = "kod_kierunku", nullable = false, unique = true, length = 10)
     private String kodKierunku;
 
     @NotNull(message = "Stopień jest wymagany")
     @Enumerated(EnumType.STRING)
-    @Column(name = "STOPIEN", nullable = false, length = 20)
+    @Column(name = "stopien", nullable = false, length = 20)
     private Stopien stopien;
 
-    // Zamiast CascadeType.ALL – tylko PERSIST i MERGE, bez REMOVE (bezpieczniej)
+    // SOFT DELETE – flaga usunięcia logicznego
+    @Column(name = "deleted")
+    private boolean deleted = false;
+
+    // BEZ CascadeType.ALL – nie chcemy fizycznego usuwania przedmiotów
     @OneToMany(mappedBy = "kierunek", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
-    @JsonManagedReference  // zapobiega cyklicznej serializacji
+    @JsonManagedReference
     private List<Przedmiot> przedmioty = new ArrayList<>();
 
-    // Enum dla stopnia
     public enum Stopien {
         INZYNIER_LICENCJAT(1, "I stopień (inżynier/licencjat)"),
         MAGISTER(2, "II stopień (magister)");
@@ -63,7 +68,6 @@ public class Kierunek {
 
     public Kierunek() {}
 
-    // Metody pomocnicze do zarządzania relacją
     public void addPrzedmiot(Przedmiot przedmiot) {
         przedmioty.add(przedmiot);
         przedmiot.setKierunek(this);
@@ -74,7 +78,6 @@ public class Kierunek {
         przedmiot.setKierunek(null);
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNazwa() { return nazwa; }
@@ -83,6 +86,8 @@ public class Kierunek {
     public void setKodKierunku(String kodKierunku) { this.kodKierunku = kodKierunku; }
     public Stopien getStopien() { return stopien; }
     public void setStopien(Stopien stopien) { this.stopien = stopien; }
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
     public List<Przedmiot> getPrzedmioty() { return przedmioty; }
     public void setPrzedmioty(List<Przedmiot> przedmioty) { this.przedmioty = przedmioty; }
 
@@ -106,6 +111,7 @@ public class Kierunek {
                 ", nazwa='" + nazwa + '\'' +
                 ", kodKierunku='" + kodKierunku + '\'' +
                 ", stopien=" + stopien +
+                ", deleted=" + deleted +
                 '}';
     }
 }

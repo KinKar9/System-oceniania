@@ -9,57 +9,57 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import pl.studenci.systemoceniania.entity.Zapisy;
 
 @Entity
-@Table(name = "STUDENCI")
+@Table(name = "studenci")
 public class Student {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_STUDENTA", updatable = false)
+    @Column(name = "id_studenta", updatable = false)
     private Long id;
 
     @NotBlank(message = "Imię jest wymagane")
     @Size(max = 50, message = "Imię może mieć maksymalnie 50 znaków")
-    @Column(name = "IMIE", nullable = false, length = 50)
+    @Column(name = "imie", nullable = false, length = 50)
     private String imie;
 
     @NotBlank(message = "Nazwisko jest wymagane")
     @Size(max = 100, message = "Nazwisko może mieć maksymalnie 100 znaków")
-    @Column(name = "NAZWISKO", nullable = false, length = 100)
+    @Column(name = "nazwisko", nullable = false, length = 100)
     private String nazwisko;
 
     @NotBlank(message = "Numer indeksu jest wymagany")
     @Size(min = 6, max = 10, message = "Numer indeksu musi mieć od 6 do 10 znaków")
-    @Column(name = "NR_INDEKSU", nullable = false, unique = true, length = 10)
+    @Column(name = "nr_indeksu", nullable = false, unique = true, length = 10)
     private String nrIndeksu;
 
     @NotBlank(message = "Email jest wymagany")
     @Email(message = "Nieprawidłowy format email")
     @Size(max = 100, message = "Email może mieć maksymalnie 100 znaków")
-    @Column(name = "EMAIL", nullable = false, unique = true, length = 100)
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
     @NotNull(message = "Data urodzenia jest wymagana")
     @Past(message = "Data urodzenia musi być w przeszłości")
-    @Column(name = "DATA_URODZENIA", nullable = false)
+    @Column(name = "data_urodzenia", nullable = false)
     private LocalDate dataUrodzenia;
 
     @Pattern(regexp = "^[0-9]{11}$", message = "PESEL musi składać się z 11 cyfr")
-    @Column(name = "PESEL", unique = true, length = 11)
+    @Column(name = "pesel", unique = true, length = 11)
     private String pesel;
 
-    // Token powinien być haszowany przed zapisem – przechowujemy hash
     @Size(max = 255, message = "Token może mieć maksymalnie 255 znaków")
-    @Column(name = "SECURE_TOKEN", unique = true, length = 255)
+    @Column(name = "secure_token", unique = true, length = 255)
     private String secureToken;
 
     @CreationTimestamp
-    @Column(name = "DATA_UTWORZENIA", updatable = false)
+    @Column(name = "data_utworzenia", updatable = false)
     private LocalDateTime dataUtworzenia;
 
     @UpdateTimestamp
-    @Column(name = "DATA_AKTUALIZACJI")
+    @Column(name = "data_aktualizacji")
     private LocalDateTime dataAktualizacji;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -67,7 +67,6 @@ public class Student {
 
     public Student() {}
 
-    // Metody pomocnicze do zarządzania relacją z zapisami
     public void addZapis(Zapisy zapis) {
         zapisy.add(zapis);
         zapis.setStudent(this);
@@ -78,7 +77,6 @@ public class Student {
         zapis.setStudent(null);
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getImie() { return imie; }
@@ -125,5 +123,13 @@ public class Student {
                 ", email='" + email + '\'' +
                 ", dataUrodzenia=" + dataUrodzenia +
                 '}';
+    }
+    @Column(name = "CZY_AKTYWNY", nullable = false)
+    private boolean czyAktywny = true;
+    public boolean isCzyAktywny() {
+        return czyAktywny;
+    }
+    public void setCzyAktywny(boolean czyAktywny) {
+        this.czyAktywny = czyAktywny;
     }
 }

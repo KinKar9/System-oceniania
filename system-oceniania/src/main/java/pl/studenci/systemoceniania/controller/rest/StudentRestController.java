@@ -24,11 +24,11 @@ public class StudentRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Student> getOne(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(service.findById(id));
-        } catch (Exception e) {
+        Student student = service.findById(id);
+        if (student == null) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(student);
     }
 
     @PostMapping
@@ -39,18 +39,17 @@ public class StudentRestController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Student> update(@PathVariable Long id, @RequestBody Student student) {
-        try {
-            Student existing = service.findById(id);
-            existing.setImie(student.getImie());
-            existing.setNazwisko(student.getNazwisko());
-            existing.setEmail(student.getEmail());
-            existing.setNrIndeksu(student.getNrIndeksu());
-            existing.setDataUrodzenia(student.getDataUrodzenia());
-            existing.setPesel(student.getPesel());
-            return ResponseEntity.ok(service.save(existing));
-        } catch (Exception e) {
+        Student existing = service.findById(id);
+        if (existing == null) {
             return ResponseEntity.notFound().build();
         }
+        existing.setImie(student.getImie());
+        existing.setNazwisko(student.getNazwisko());
+        existing.setEmail(student.getEmail());
+        existing.setNrIndeksu(student.getNrIndeksu());
+        existing.setDataUrodzenia(student.getDataUrodzenia());
+        existing.setPesel(student.getPesel());
+        return ResponseEntity.ok(service.save(existing));
     }
 
     @DeleteMapping("/{id}")

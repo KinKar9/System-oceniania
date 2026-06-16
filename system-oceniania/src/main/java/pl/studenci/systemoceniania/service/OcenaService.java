@@ -1,5 +1,8 @@
 package pl.studenci.systemoceniania.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +31,9 @@ public class OcenaService {
     private final ZapisyRepository zapisyRepository;
     private final SlownikOcenRepository slownikOcenRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public OcenaService(OcenaRepository ocenaRepository,
                         ZapisyRepository zapisyRepository,
                         SlownikOcenRepository slownikOcenRepository) {
@@ -41,6 +47,7 @@ public class OcenaService {
         return ocenaRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Ocena> findAllSortedByPopularnoscPrzedmiotu() {
         return ocenaRepository.findAllSortedByPopularnoscPrzedmiotu();
     }
@@ -59,27 +66,84 @@ public class OcenaService {
         }
     }
 
-    // Wersja bez daty – deleguje do tej z datą (dataOd = null)
     @Transactional(readOnly = true)
     public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId, String sortBy, String order) {
         return filterAndSort(studentId, przedmiotId, typId, null, sortBy, order);
     }
 
-    // Wersja z datą
     @Transactional(readOnly = true)
     public List<Ocena> filterAndSort(Long studentId, Long przedmiotId, Long typId,
                                      LocalDate dataOd, String sortBy, String order) {
         if (sortBy == null || sortBy.isEmpty()) sortBy = "data";
         if (order == null || order.isEmpty()) order = "desc";
+
+        // Budowa dynamicznego zapytania JPQL
+        StringBuilder jpql = new StringBuilder(
+                "SELECT DISTINCT o FROM Ocena o " +
+                        "JOIN FETCH o.zapis z " +
+                        "JOIN FETCH z.student s " +
+                        "JOIN FETCH z.grupa g " +
+                        "JOIN FETCH g.przedmiot p " +
+                        "JOIN FETCH o.typ t " +
+                        "WHERE 1=1"
+        );
+
+        if (studentId != null) {
+            jpql.append(" AND s.id = :studentId");
+        }
+        if (przedmiotId != null) {
+            jpql.append(" AND p.id = :przedmiotId");
+        }
+        if (typId != null) {
+            jpql.append(" AND t.id = :typId");
+        }
+        if (dataOd != null) {
+            jpql.append(" AND o.dataWystawienia >= :dataOd");
+        }
+
+        // Mapowanie nazwy sortowania na ścieżkę w encji
+        String orderField;
+        switch (sortBy) {
+            case "wartosc":
+                orderField = "o.wartosc";
+                break;
+            case "data":
+                orderField = "o.dataWystawienia";
+                break;
+            case "nazwisko":
+                orderField = "s.nazwisko";
+                break;
+            default:
+                orderField = "o.dataWystawienia";
+        }
+        jpql.append(" ORDER BY ").append(orderField).append(" ").append(order.equalsIgnoreCase("asc") ? "ASC" : "DESC");
+
+        TypedQuery<Ocena> query = entityManager.createQuery(jpql.toString(), Ocena.class);
+
+        if (studentId != null) {
+            query.setParameter("studentId", studentId);
+        }
+        if (przedmiotId != null) {
+            query.setParameter("przedmiotId", przedmiotId);
+        }
+        if (typId != null) {
+            query.setParameter("typId", typId);
+        }
+        if (dataOd != null) {
+            query.setParameter("dataOd", dataOd);
+        }
+
         try {
-            return ocenaRepository.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
+            return query.getResultList();
         } catch (Exception e) {
             log.error("Błąd podczas filtrowania i sortowania ocen: {}", e.getMessage(), e);
             throw new RuntimeException("Nie udało się przefiltrować ocen", e);
         }
     }
 
+    @Transactional
     public Ocena save(Ocena ocena) {
+        // ... (bez zmian – zachowaj dotychczasową implementację)
         if (ocena == null) {
             log.error("Próba zapisu null jako ocena");
             throw new IllegalArgumentException("Ocena nie może być nullem");
@@ -104,8 +168,11 @@ public class OcenaService {
                     log.warn("Nie znaleziono zapisu o ID: {}", ocena.getZapis().getId());
                     return new IllegalArgumentException("Zapis nie istnieje");
                 });
-        if (!"Aktywny".equals(zapis.getStatus())) {
-            log.warn("Próba wystawienia oceny dla nieaktywnego zapisu ID: {}", zapis.getId());
+
+        entityManager.refresh(zapis);
+
+        if (zapis.getStatus() != Zapisy.StatusZapisu.AKTYWNY) {
+            log.warn("Próba wystawienia oceny dla nieaktywnego zapisu ID: {} (status: {})", zapis.getId(), zapis.getStatus());
             throw new IllegalArgumentException("Student nie jest aktywny w tym zapisie");
         }
 
@@ -138,6 +205,7 @@ public class OcenaService {
         }
     }
 
+    @Transactional
     public void delete(Long id) {
         if (id == null || id <= 0) {
             log.warn("Próba usunięcia oceny z nieprawidłowym ID: {}", id);
@@ -156,13 +224,15 @@ public class OcenaService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Ocena findById(Long id) {
         return ocenaRepository.findById(id).orElse(null);
     }
 
     private boolean isValidGrade(double value) {
         if (value < MIN_OCENA || value > MAX_OCENA) return false;
-        double remainder = value % KROK;
-        return Math.abs(remainder) < 0.0001 || Math.abs(remainder - KROK) < 0.0001;
+        double scaled = value / KROK;
+        double remainder = scaled - Math.floor(scaled);
+        return Math.abs(remainder) < 1e-9 || Math.abs(remainder - 1.0) < 1e-9;
     }
 }

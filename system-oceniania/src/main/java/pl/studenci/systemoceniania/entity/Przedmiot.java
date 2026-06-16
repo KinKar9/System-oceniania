@@ -7,34 +7,34 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "PRZEDMIOTY")
+@Table(name = "przedmioty")
 public class Przedmiot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_PRZEDMIOTU", updatable = false)
+    @Column(name = "id_przedmiotu", updatable = false)
     private Long id;
 
     @NotBlank(message = "Kod przedmiotu jest wymagany")
     @Size(max = 15, message = "Kod może mieć maksymalnie 15 znaków")
     @Pattern(regexp = "^[A-Z0-9-]+$", message = "Kod może zawierać tylko duże litery, cyfry i myślniki")
-    @Column(name = "KOD_PRZEDMIOTU", nullable = false, unique = true, updatable = false, length = 15)
+    @Column(name = "kod_przedmiotu", nullable = false, unique = true, updatable = false, length = 15)
     private String kodPrzedmiotu;
 
     @NotBlank(message = "Nazwa przedmiotu jest wymagana")
     @Size(max = 150, message = "Nazwa może mieć maksymalnie 150 znaków")
-    @Column(name = "NAZWA", nullable = false, length = 150)
+    @Column(name = "nazwa", nullable = false, length = 150)
     private String nazwa;
 
     @NotNull(message = "ECTS jest wymagane")
     @Min(value = 1, message = "ECTS nie może być mniejsze niż 1")
-    @Max(value = 30, message = "ECTS nie może przekraczać 30")  // zwiększone z 12
-    @Column(name = "ECTS", nullable = false)
+    @Max(value = 30, message = "ECTS nie może przekraczać 30")
+    @Column(name = "ects", nullable = false)
     private Integer ects;
 
     @NotNull(message = "Kierunek jest wymagany")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "KIERUNEK_ID", nullable = false)
+    @JoinColumn(name = "kierunek_id", nullable = false)
     private Kierunek kierunek;
 
     @OneToMany(mappedBy = "przedmiot", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
@@ -44,12 +44,11 @@ public class Przedmiot {
     private WarunkiZal warunkiZal;
 
     @Version
-    @Column(name = "WERSJA")
+    @Column(name = "wersja")
     private Integer version;
 
     public Przedmiot() {}
 
-    // Metody pomocnicze do zarządzania relacjami
     public void addGrupa(Grupa grupa) {
         grupy.add(grupa);
         grupa.setPrzedmiot(this);
@@ -70,7 +69,6 @@ public class Przedmiot {
         }
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getKodPrzedmiotu() { return kodPrzedmiotu; }

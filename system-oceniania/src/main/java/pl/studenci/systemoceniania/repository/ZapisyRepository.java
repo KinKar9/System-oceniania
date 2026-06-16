@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ZapisyRepository extends JpaRepository<Zapisy, Long> {
-    List<Zapisy> findByStudentId(Long studentId);
-    List<Zapisy> findByGrupaId(Long grupaId);
-    Optional<Zapisy> findByStudentIdAndGrupaId(Long studentId, Long grupaId);
-    List<Zapisy> findByStudentIdAndStatus(Long studentId, String status);
-    long countByGrupaId(Long grupaId);
+
+    List<Zapisy> findByStudent_Id(Long studentId);
+    List<Zapisy> findByGrupa_Id(Long grupaId);
+    Optional<Zapisy> findByStudent_IdAndGrupa_Id(Long studentId, Long grupaId);
+    List<Zapisy> findByStudent_IdAndStatus(Long studentId, String status);
+    long countByGrupa_Id(Long grupaId);
+    List<Zapisy> findByStatus(Zapisy.StatusZapisu status);
 }

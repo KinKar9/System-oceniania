@@ -8,42 +8,41 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "LOGI_SYSTEMU", indexes = {
+@Table(name = "logi_systemu", indexes = {
         @Index(name = "idx_logi_username", columnList = "username"),
-        @Index(name = "idx_logi_data_akcji", columnList = "dataAkcji")
+        @Index(name = "idx_logi_data_akcji", columnList = "data_akcji")
 })
 public class LogiSystemu {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_LOGU", updatable = false)
+    @Column(name = "id_logu", updatable = false)
     private Long id;
 
     @NotBlank(message = "Nazwa użytkownika jest wymagana")
     @Size(max = 50, message = "Nazwa użytkownika może mieć maksymalnie 50 znaków")
-    @Column(name = "USERNAME", nullable = false, length = 50)
+    @Column(name = "username", nullable = false, length = 50)
     private String username;
 
     @NotBlank(message = "Akcja jest wymagana")
     @Size(max = 200, message = "Opis akcji może mieć maksymalnie 200 znaków")
-    @Column(name = "AKCJA", nullable = false, length = 200)
+    @Column(name = "akcja", nullable = false, length = 200)
     private String akcja;
 
     @NotNull(message = "Data akcji jest wymagana")
-    @Column(name = "DATA_AKCJI", nullable = false)
+    @Column(name = "data_akcji", nullable = false)
     private LocalDateTime dataAkcji;
 
     @Size(max = 45, message = "Adres IP może mieć maksymalnie 45 znaków")
-    @Column(name = "IP_ADRES", length = 45)
+    @Column(name = "ip_adres", length = 45)
     private String ipAdres;
 
-    // Opcjonalnie: enum dla typów akcji
     public enum TypAkcji {
         LOGIN, LOGOUT, DELETE, UPDATE, INSERT, SELECT, ERROR, OTHER
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "TYP_AKCJI", length = 20)
+    @Column(name = "typ_akcji", length = 20)
     private TypAkcji typAkcji;
 
     public LogiSystemu() {}
@@ -55,7 +54,6 @@ public class LogiSystemu {
         }
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }

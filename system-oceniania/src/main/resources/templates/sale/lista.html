@@ -6,7 +6,6 @@
   <title>System Oceniania - Sale</title>
   <link rel="stylesheet" th:href="@{/css/style.css}">
   <style>
-    /* Dodatkowe style dla responsywności i stanów */
     .table-responsive {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -59,6 +58,10 @@
         gap: 4px;
       }
     }
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -71,7 +74,6 @@
     </a>
   </div>
 
-  <!-- Wskaźnik ładowania (opcjonalny, jeśli dane są pobierane asynchronicznie) -->
   <div id="loadingSpinner" class="loading-spinner">
     <span>Ładowanie danych...</span>
   </div>
@@ -79,13 +81,13 @@
   <section aria-label="Tabela sal lekcyjnych">
     <h2>Lista sal lekcyjnych</h2>
 
-    <!-- Komunikat o pustej liście -->
-    <div th:if="${#lists.isEmpty(sale)}" class="empty-state" role="alert">
+    <!-- Komunikat gdy brak sal lub lista jest pusta -->
+    <div th:if="${sale == null or #lists.isEmpty(sale)}" class="empty-state" role="alert">
       <p>📭 Brak sal w systemie. Kliknij przycisk "Dodaj nową salę", aby utworzyć pierwszą salę.</p>
     </div>
 
-    <!-- Tabela widoczna tylko gdy lista nie jest pusta -->
-    <div th:unless="${#lists.isEmpty(sale)}" class="table-responsive">
+    <!-- Tabela widoczna tylko gdy lista istnieje i nie jest pusta -->
+    <div th:unless="${sale == null or #lists.isEmpty(sale)}" class="table-responsive">
       <table class="table table-striped">
         <thead>
         <tr>
@@ -131,7 +133,6 @@
     document.querySelectorAll('form[data-numer]').forEach(function(form) {
       form.addEventListener('submit', function(e) {
         var numer = form.getAttribute('data-numer') || '?';
-        // escapowanie znaków specjalnych — ochrona przed XSS
         var escaped = numer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         if (!confirm('Czy na pewno chcesz usunąć salę numer ' + escaped + '?')) {
           e.preventDefault();

@@ -8,6 +8,7 @@
         .container { max-width: 800px; margin: auto; }
         .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
         .btn { background: #0066cc; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; border-radius: 4px; }
+        .btn-secondary { background: #666; }
     </style>
 </head>
 <body>
@@ -24,7 +25,8 @@
         <a th:href="@{/student/profil}" class="btn">Przejdź do profilu</a>
     </div>
     <form th:action="@{/logout}" method="post">
-        <button type="submit" class="btn" style="background:#666;">Wyloguj</button>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <button type="submit" class="btn btn-secondary">Wyloguj</button>
     </form>
 </div>
 </body>

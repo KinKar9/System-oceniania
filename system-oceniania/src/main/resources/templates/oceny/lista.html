@@ -98,10 +98,8 @@
                 </option>
             </select>
 
-            <label for="dataOd">Data od (od aktualnej):</label>
-            <input type="date" id="dataOd" name="dataOd" th:value="${param.dataOd}" />
-
-            <a href="/oceny/popularnosc" class="btn">Sortuj według popularności przedmiotu</a>
+            <label for="dataOd">Data od:</label>
+            <input type="date" id="dataOd" name="dataOd" th:value="${selectedDataOd}" />
 
             <button type="submit">Filtruj</button>
             <a th:href="@{/oceny}">Wyczyść filtry</a>
@@ -138,7 +136,7 @@
                     <td th:text="${o.zapis.grupa.przedmiot.nazwa}"></td>
                     <td th:text="${o.typ.nazwa}"></td>
                     <td th:text="${o.wartosc}"></td>
-                    <td th:text="${#dates.format(o.dataWystawienia, 'dd-MM-yyyy')}"></td>
+                    <td th:text="${o.dataWystawienia != null ? #temporals.format(o.dataWystawienia, 'dd-MM-yyyy') : ''}"></td>
                     <td th:text="${o.komentarz}"></td>
                     <td>
                         <form th:action="@{/oceny/usun/{id}(id=${o.id})}" method="post" style="display:inline;">

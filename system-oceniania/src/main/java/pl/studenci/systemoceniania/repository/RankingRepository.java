@@ -5,5 +5,6 @@ import pl.studenci.systemoceniania.entity.Ranking;
 import java.util.Optional;
 
 public interface RankingRepository extends JpaRepository<Ranking, Long> {
+
     Optional<Ranking> findTopByOrderByIdDesc();
 }

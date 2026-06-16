@@ -25,7 +25,7 @@ public class KierunekController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("kierunki", repo.findAll());
+        model.addAttribute("kierunki", repo.findAll()); // tylko nieusunięte
         return "kierunki/lista";
     }
 
@@ -47,8 +47,8 @@ public class KierunekController {
                     return "kierunki/formularz";
                 })
                 .orElseGet(() -> {
-                    log.warn("Próba edycji nieistniejącego kierunku o ID: {}", id);
-                    redirectAttributes.addFlashAttribute("error", "Kierunek o podanym ID nie istnieje.");
+                    log.warn("Próba edycji nieistniejącego lub usuniętego kierunku o ID: {}", id);
+                    redirectAttributes.addFlashAttribute("error", "Kierunek o podanym ID nie istnieje lub został usunięty.");
                     return "redirect:/kierunki";
                 });
     }
@@ -61,15 +61,25 @@ public class KierunekController {
             return "kierunki/formularz";
         }
         try {
-            repo.save(k);
+            if (k.getId() != null && repo.existsById(k.getId())) {
+                Kierunek existing = repo.findById(k.getId()).get();
+                existing.setNazwa(k.getNazwa());
+                existing.setKodKierunku(k.getKodKierunku());
+                existing.setStopien(k.getStopien());
+                repo.save(existing);
+                log.info("Zaktualizowano kierunek: {}", existing.getNazwa());
+            } else {
+                k.setDeleted(false);
+                repo.save(k);
+                log.info("Zapisano nowy kierunek: {}", k.getNazwa());
+            }
             redirectAttributes.addFlashAttribute("success", "Kierunek został zapisany pomyślnie.");
-            log.info("Zapisano kierunek: {}", k.getNazwa());
         } catch (DataIntegrityViolationException e) {
             log.warn("Naruszenie unikalności przy zapisie kierunku: {}", e.getMessage());
             br.rejectValue("nazwa", "error.kierunek", "Kierunek o tej nazwie już istnieje");
             return "kierunki/formularz";
         } catch (Exception e) {
-            log.error("Błąd podczas zapisu kierunku: {}", e.getMessage());
+            log.error("Błąd podczas zapisu kierunku: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Wystąpił błąd podczas zapisywania kierunku.");
             return "redirect:/kierunki";
         }
@@ -82,17 +92,35 @@ public class KierunekController {
             redirectAttributes.addFlashAttribute("error", "Nieprawidłowe ID kierunku.");
             return "redirect:/kierunki";
         }
+
+        Kierunek kierunek = repo.findById(id).orElse(null);
+        if (kierunek == null) {
+            redirectAttributes.addFlashAttribute("error", "Kierunek o podanym ID nie istnieje lub został już usunięty.");
+            return "redirect:/kierunki";
+        }
+
         try {
-            repo.deleteById(id);
-            redirectAttributes.addFlashAttribute("success", "Kierunek został usunięty pomyślnie.");
-            log.info("Usunięto kierunek o ID: {}", id);
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Nie można usunąć kierunku o ID {} – powiązane rekordy", id);
-            redirectAttributes.addFlashAttribute("error", "Nie można usunąć kierunku, ponieważ są do niego przypisane przedmioty lub inne dane.");
+            kierunek.setDeleted(true);
+            repo.save(kierunek);
+            redirectAttributes.addFlashAttribute("success", "Kierunek został oznaczony jako usunięty. Dane pozostają w bazie, ale nie są wyświetlane.");
+            log.info("Miękko usunięto kierunek o ID: {}", id);
         } catch (Exception e) {
-            log.error("Błąd podczas usuwania kierunku {}: {}", id, e.getMessage());
+            log.error("Błąd podczas miękkiego usuwania kierunku {}: {}", id, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Wystąpił błąd podczas usuwania kierunku.");
         }
+        return "redirect:/kierunki";
+    }
+
+    @PostMapping("/przywroc/{id}")
+    public String restore(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Kierunek kierunek = repo.findDeletedById(id).orElse(null);
+        if (kierunek == null) {
+            redirectAttributes.addFlashAttribute("error", "Nie znaleziono usuniętego kierunku o podanym ID.");
+            return "redirect:/kierunki";
+        }
+        kierunek.setDeleted(false);
+        repo.save(kierunek);
+        redirectAttributes.addFlashAttribute("success", "Kierunek został przywrócony.");
         return "redirect:/kierunki";
     }
 }

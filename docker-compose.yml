@@ -1,16 +1,16 @@
 services:
-  oracle-db:
-    image: gvenzl/oracle-free:latest
-    container_name: projekt_oracle_xe
+  postgres-db:
+    image: postgres:16
+    container_name: projekt_postgres
     ports:
-      - "1521:1521"
+      - "5432:5432"
     environment:
-      - ORACLE_PASSWORD=Projekt2026Haslo
-      - APP_USER=studenci_admin
-      - APP_USER_PASSWORD=Projekt2026Haslo
+      POSTGRES_PASSWORD: Projekt2026Haslo
+      POSTGRES_USER: postgres
+      POSTGRES_DB: system_oceniania
     volumes:
-      - oracle-data:/opt/oracle/oradata
-      - ./init-scripts:/opt/oracle/scripts/startup
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
 
 volumes:
-  oracle-data:
+  postgres-data:

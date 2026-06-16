@@ -12,7 +12,9 @@ import pl.studenci.systemoceniania.entity.Student;
 import pl.studenci.systemoceniania.service.StudentService;
 import pl.studenci.systemoceniania.service.StatystykiService;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/public/student")
@@ -30,9 +32,9 @@ public class PublicStudentController {
         this.studentService = studentService;
         this.statystykiService = statystykiService;
     }
+
     @GetMapping("/{token}")
     public String pokazOceny(@PathVariable String token, Model model) {
-
         if (token == null || token.isBlank()) {
             log.warn("Próba dostępu z pustym tokenem");
             return PROFIL_NIEDOSTEPNY_VIEW;
@@ -40,14 +42,18 @@ public class PublicStudentController {
 
         try {
             Student student = studentService.findBySecureTokenWithOceny(token);
-
             if (student == null) {
                 log.warn("Nie znaleziono studenta dla tokena: {}", maskToken(token));
                 return PROFIL_NIEDOSTEPNY_VIEW;
             }
-            List<Ocena> oceny = student.getZapisy().stream()
-                    .flatMap(z -> z.getOceny().stream())
-                    .toList();
+
+            // Zabezpieczenie przed NullPointerException – jeśli zapisy są null, zwracamy pustą listę
+            List<Ocena> oceny = Optional.ofNullable(student.getZapisy())
+                    .map(zapisy -> zapisy.stream()
+                            .filter(z -> z.getOceny() != null) // pomijamy zapisy bez ocen
+                            .flatMap(z -> z.getOceny().stream())
+                            .toList())
+                    .orElse(Collections.emptyList());
 
             Double srednia = statystykiService
                     .pobierzSredniaStudenta(student.getId())

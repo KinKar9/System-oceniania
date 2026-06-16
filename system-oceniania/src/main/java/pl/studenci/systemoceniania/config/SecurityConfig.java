@@ -37,6 +37,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .userDetailsService(userDetailsService)
+                .csrf(csrf -> csrf
+                                .ignoringRequestMatchers("/api/**")
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/login", "/public/**", "/api/**").permitAll()
                         .requestMatchers("/pracownicy/**").hasAnyRole("ADMIN", "PRACOWNIK")
@@ -44,7 +47,6 @@ public class SecurityConfig {
                         .requestMatchers("/przedmioty/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/oceny/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/kierunki/**").hasAnyRole("ADMIN", "PRACOWNIK")
-                        // Dodaj dostęp dla studenta do jego panelu
                         .requestMatchers("/student/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
@@ -57,24 +59,20 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
+
         return http.build();
     }
 
     @Bean
     public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
-        return new AuthenticationSuccessHandler() {
-            @Override
-            public void onAuthenticationSuccess(HttpServletRequest request,
-                                                HttpServletResponse response,
-                                                Authentication authentication) throws IOException, ServletException {
-                Set<String> roles = AuthorityUtils.authorityListToSet(authentication.getAuthorities());
-                if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_PRACOWNIK")) {
-                    response.sendRedirect("/pracownicy");
-                } else if (roles.contains("ROLE_STUDENT")) {
-                    response.sendRedirect("/student/dashboard");
-                } else {
-                    response.sendRedirect("/");
-                }
+        return (request, response, authentication) -> {
+            Set<String> roles = AuthorityUtils.authorityListToSet(authentication.getAuthorities());
+            if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_PRACOWNIK")) {
+                response.sendRedirect("/pracownicy");
+            } else if (roles.contains("ROLE_STUDENT")) {
+                response.sendRedirect("/student/dashboard");
+            } else {
+                response.sendRedirect("/");
             }
         };
     }

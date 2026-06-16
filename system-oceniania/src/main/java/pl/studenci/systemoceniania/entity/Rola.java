@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
+import pl.studenci.systemoceniania.entity.Uzytkownik;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -12,8 +12,8 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(name = "ROLE", indexes = {
-        @Index(name = "idx_rola_nazwa", columnList = "NAZWA_ROLI", unique = true)
+@Table(name = "rola", indexes = {
+        @Index(name = "idx_rola_nazwa", columnList = "nazwa_roli", unique = true)
 })
 public class Rola implements Serializable {
 
@@ -21,39 +21,35 @@ public class Rola implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_ROLI", updatable = false)
+    @Column(name = "id_roli", updatable = false)
     private Long id;
 
     @NotNull(message = "Nazwa roli jest wymagana")
     @Enumerated(EnumType.STRING)
-    @Column(name = "NAZWA_ROLI", nullable = false, unique = true, length = 30)
+    @Column(name = "nazwa_roli", nullable = false, unique = true, length = 30)
     private NazwaRoli nazwaRoli;
 
-    // Pola audytowe
     @CreationTimestamp
-    @Column(name = "DATA_UTWORZENIA", updatable = false)
+    @Column(name = "data_utworzenia", updatable = false)
     private LocalDateTime dataUtworzenia;
 
     @UpdateTimestamp
-    @Column(name = "DATA_AKTUALIZACJI")
+    @Column(name = "data_aktualizacji")
     private LocalDateTime dataAktualizacji;
 
-    // Relacja zwrotna do Uzytkownik
     @ManyToMany(mappedBy = "role")
     private Set<Uzytkownik> uzytkownicy = new HashSet<>();
 
-    // Enum z dozwolonymi rolami
-    public static enum NazwaRoli
-    {
+    public enum NazwaRoli {
         ADMIN, PRACOWNIK, STUDENT
     }
+
     public Rola() {}
 
     public Rola(NazwaRoli nazwaRoli) {
         this.nazwaRoli = nazwaRoli;
     }
 
-    // gettery i settery
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public NazwaRoli getNazwaRoli() { return nazwaRoli; }

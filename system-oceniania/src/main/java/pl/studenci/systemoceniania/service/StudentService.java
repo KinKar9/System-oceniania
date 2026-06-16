@@ -17,7 +17,6 @@ public class StudentService {
 
     private static final Logger log = LoggerFactory.getLogger(StudentService.class);
 
-    // POPRAWKA 1: pole nazywa się "repository" — było "studentRepository" w dodanej metodzie
     private final StudentRepository repository;
 
     public StudentService(StudentRepository repository) {
@@ -81,7 +80,6 @@ public class StudentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Nieprawidłowe ID studenta");
         }
-        // POPRAWKA 2: jedno zapytanie zamiast existsById + deleteById
         Student student = repository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Próba usunięcia nieistniejącego studenta o ID: {}", id);
@@ -112,15 +110,11 @@ public class StudentService {
                 });
     }
 
-    // POPRAWKA 3: usunięto findBySecureToken rzucający NOT_FOUND —
-    // kontroler PublicStudentController używa findBySecureTokenWithOceny,
-    // które zwraca null zamiast wyjątku, żeby nie ujawniać istnienia tokenu
     @Transactional(readOnly = true)
     public Student findBySecureTokenWithOceny(String token) {
         if (token == null || token.isBlank()) {
             return null;
         }
-        // POPRAWKA 1: było "studentRepository" — poprawiono na "repository"
         return repository.findBySecureTokenWithOceny(token).orElse(null);
     }
 

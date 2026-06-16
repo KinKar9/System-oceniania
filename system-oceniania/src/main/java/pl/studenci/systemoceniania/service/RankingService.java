@@ -2,6 +2,7 @@ package pl.studenci.systemoceniania.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,22 +29,28 @@ public class RankingService {
     }
 
     /**
-     * Generuje ranking studentów poprzez procedurę składowaną.
+     * Generuje ranking studentów poprzez procedurę składowaną w PostgreSQL.
      * @param semesterId identyfikator semestru (opcjonalny) – walidowany przed przekazaniem
      */
     public void generateRanking(String semesterId) {
-        // Walidacja parametru przed przekazaniem do procedury (zabezpieczenie przed SQL Injection)
         if (semesterId != null && !isValidSemesterId(semesterId)) {
             log.warn("Nieprawidłowy format identyfikatora semestru: {}", semesterId);
             throw new IllegalArgumentException("Nieprawidłowy format identyfikatora semestru. Dozwolone: cyfry, myślniki, litery i spacje.");
         }
 
         try {
-            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("PKG_OCENY.RANKING_STUDENTOW");
+            // PostgreSQL – procedura bez pakietu, z nazwanym parametrem
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("ranking_studentow");
+
+            // Jawne rejestrowanie parametru nazwanego
+            query.registerStoredProcedureParameter("p_semestr", String.class, ParameterMode.IN);
+
             if (semesterId != null && !semesterId.isEmpty()) {
-                query.registerStoredProcedureParameter(1, String.class, jakarta.persistence.ParameterMode.IN);
-                query.setParameter(1, semesterId);
+                query.setParameter("p_semestr", semesterId);
+            } else {
+                query.setParameter("p_semestr", null);
             }
+
             query.execute();
             log.info("Ranking został pomyślnie wygenerowany dla semestru: {}", semesterId);
         } catch (Exception e) {
@@ -58,7 +65,6 @@ public class RankingService {
      */
     public Optional<Ranking> getLatestRanking() {
         try {
-            // Użycie dedykowanej metody w repozytorium – wydajność
             return rankingRepository.findTopByOrderByIdDesc();
         } catch (Exception e) {
             log.error("Błąd podczas pobierania ostatniego rankingu: {}", e.getMessage(), e);
@@ -67,10 +73,9 @@ public class RankingService {
     }
 
     /**
-     * Waliduje format identyfikatora semestru. Dostosuj regex według potrzeb.
+     * Waliduje format identyfikatora semestru.
      */
     private boolean isValidSemesterId(String semesterId) {
-        // Przykład: dozwolone litery, cyfry, myślniki, podkreślenia, spacje
         return semesterId != null && semesterId.matches("^[a-zA-Z0-9\\-\\_\\s]+$");
     }
 }

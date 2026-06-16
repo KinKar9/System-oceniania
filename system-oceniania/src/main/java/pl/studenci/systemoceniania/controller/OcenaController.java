@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import pl.studenci.systemoceniania.entity.Ocena;
 import pl.studenci.systemoceniania.entity.Zapisy;
 import pl.studenci.systemoceniania.service.OcenaService;
-import pl.studenci.systemoceniania.service.SlownikOcenService; // POPRAWKA 2: serwis zamiast repozytorium
+import pl.studenci.systemoceniania.service.SlownikOcenService;
 import pl.studenci.systemoceniania.service.StudentService;
 import pl.studenci.systemoceniania.service.PrzedmiotService;
 import pl.studenci.systemoceniania.service.ZapisyService;
@@ -22,7 +22,6 @@ import pl.studenci.systemoceniania.service.ZapisyService;
 import java.time.LocalDate;
 import java.util.List;
 
-// POPRAWKA 1: Kontrola dostępu — tylko PRACOWNIK i ADMIN mogą zarządzać ocenami
 @Controller
 @RequestMapping("/oceny")
 @PreAuthorize("hasAnyRole('PRACOWNIK', 'ADMIN')")
@@ -34,7 +33,7 @@ public class OcenaController {
     private final StudentService studentService;
     private final PrzedmiotService przedmiotService;
     private final ZapisyService zapisyService;
-    private final SlownikOcenService slownikOcenService; // POPRAWKA 2: serwis zamiast repozytorium
+    private final SlownikOcenService slownikOcenService;
 
     public OcenaController(OcenaService ocenaService,
                            StudentService studentService,
@@ -59,14 +58,28 @@ public class OcenaController {
                        HttpServletResponse response,
                        Model model) {
         try {
-            List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, sortBy, order);
+            if (sortBy == null && cookieSort != null) {
+                String[] parts = cookieSort.split("\\|");
+                sortBy = parts[0];
+                order = parts.length > 1 ? parts[1] : "desc";
+            }
+            if (sortBy == null) sortBy = "data";
+            if (order == null) order = "desc";
+
+            Cookie cookie = new Cookie("ocenySort", sortBy + "|" + order);
+            cookie.setPath("/oceny");
+            cookie.setMaxAge(30 * 24 * 60 * 60);
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);
+
+            List<Ocena> oceny = ocenaService.filterAndSort(studentId, przedmiotId, typId, dataOd, sortBy, order);
+            log.info("Znaleziono {} ocen", oceny.size());
             model.addAttribute("oceny", oceny);
             model.addAttribute("students", studentService.findAll());
             model.addAttribute("przedmioty", przedmiotService.findAll());
-            model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
         } catch (Exception e) {
-            log.error("Błąd podczas pobierania listy ocen: {}", e.getMessage());
-            // POPRAWKA 3: ogólny komunikat bez szczegółów wyjątku
+            log.error("Błąd podczas pobierania listy ocen: {}", e.getMessage(), e);
             model.addAttribute("error", "Nie udało się pobrać listy ocen.");
         }
         return "oceny/lista";
@@ -74,11 +87,12 @@ public class OcenaController {
 
     @GetMapping("/nowa")
     public String form(Model model) {
+        log.info("Wywołano /oceny/nowa");
         Ocena ocena = new Ocena();
         ocena.setZapis(new Zapisy());
         model.addAttribute("ocena", ocena);
-        model.addAttribute("wszystkieZapisy", zapisyService.findAll());
-        model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+        model.addAttribute("wszystkieZapisy", zapisyService.findAllActive());
+        model.addAttribute("typyOcen", slownikOcenService.findAll());
         return "oceny/formularz";
     }
 
@@ -88,15 +102,15 @@ public class OcenaController {
                        Model model,
                        RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("wszystkieZapisy", zapisyService.findAll());
-            model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+            model.addAttribute("wszystkieZapisy", zapisyService.findAllActive());
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
             return "oceny/formularz";
         }
 
         if (ocena.getZapis() == null || ocena.getZapis().getId() == null) {
             bindingResult.rejectValue("zapis.id", "error.ocena", "Zapis musi być wybrany.");
-            model.addAttribute("wszystkieZapisy", zapisyService.findAll());
-            model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+            model.addAttribute("wszystkieZapisy", zapisyService.findAllActive());
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
             return "oceny/formularz";
         }
 
@@ -107,8 +121,8 @@ public class OcenaController {
         } catch (Exception e) {
             log.warn("Nie znaleziono zapisu o ID: {}", zapisId);
             bindingResult.rejectValue("zapis.id", "error.ocena", "Wybrany zapis nie istnieje.");
-            model.addAttribute("wszystkieZapisy", zapisyService.findAll());
-            model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+            model.addAttribute("wszystkieZapisy", zapisyService.findAllActive());
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
             return "oceny/formularz";
         }
 
@@ -120,12 +134,11 @@ public class OcenaController {
         } catch (IllegalArgumentException e) {
             log.warn("Błąd walidacji przy zapisie oceny: {}", e.getMessage());
             bindingResult.rejectValue("wartosc", "error.ocena", e.getMessage());
-            model.addAttribute("wszystkieZapisy", zapisyService.findAll());
-            model.addAttribute("typyOcen", slownikOcenService.findAll()); // POPRAWKA 2
+            model.addAttribute("wszystkieZapisy", zapisyService.findAllActive());
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
             return "oceny/formularz";
         } catch (Exception e) {
-            log.error("Nieoczekiwany błąd podczas zapisu oceny: {}", e.getMessage());
-            // POPRAWKA 3: ogólny komunikat, szczegóły tylko w logu
+            log.error("Nieoczekiwany błąd podczas zapisu oceny: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Wystąpił błąd podczas zapisywania oceny.");
             return "redirect:/oceny";
         }
@@ -143,7 +156,7 @@ public class OcenaController {
             redirectAttributes.addFlashAttribute("success", "Ocena została usunięta pomyślnie.");
             log.info("Usunięto ocenę o ID: {}", id);
         } catch (Exception e) {
-            log.error("Błąd podczas usuwania oceny {}: {}", id, e.getMessage());
+            log.error("Błąd podczas usuwania oceny {}: {}", id, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Nie można usunąć oceny.");
         }
         return "redirect:/oceny";
@@ -151,8 +164,16 @@ public class OcenaController {
 
     @GetMapping("/popularnosc")
     public String listByPopularnosc(Model model) {
-        List<Ocena> oceny = ocenaService.findAllSortedByPopularnoscPrzedmiotu();
-        model.addAttribute("oceny", oceny);
+        try {
+            List<Ocena> oceny = ocenaService.findAllSortedByPopularnoscPrzedmiotu();
+            model.addAttribute("oceny", oceny);
+            model.addAttribute("students", studentService.findAll());
+            model.addAttribute("przedmioty", przedmiotService.findAll());
+            model.addAttribute("typyOcen", slownikOcenService.findAll());
+        } catch (Exception e) {
+            log.error("Błąd podczas pobierania ocen według popularności: {}", e.getMessage(), e);
+            model.addAttribute("error", "Nie udało się pobrać listy ocen.");
+        }
         return "oceny/lista";
     }
 }

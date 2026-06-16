@@ -52,44 +52,26 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Student znajdzLubUtworzStudenta(String nrIndeksu) {
-        // 1. Próba znalezienia przez dedykowaną metodę (jeśli istnieje w StudentRepository)
-        try {
-            var opt = studentRepository.findByNrIndeksu(nrIndeksu);
-            if (opt.isPresent()) {
-                log.info("Znaleziono istniejącego studenta o indeksie: {}", nrIndeksu);
-                return opt.get();
-            }
-        } catch (NoSuchMethodError | AbstractMethodError e) {
-            log.debug("Metoda findByNrIndeksu niedostępna – używam wyszukiwania strumieniowego.");
-            var studentOpt = studentRepository.findAll().stream()
-                    .filter(s -> nrIndeksu.equals(s.getNrIndeksu()))
-                    .findFirst();
-            if (studentOpt.isPresent()) {
-                return studentOpt.get();
-            }
-        }
-
-        // 2. Nie znaleziono – tworzymy nowego studenta z wszystkimi wymaganymi polami
-        Student nowy = new Student();
-        nowy.setNrIndeksu(nrIndeksu);
-        nowy.setImie("Jan");
-        nowy.setNazwisko("Kowalski");
-        nowy.setEmail("jan.kowalski@student.uczelnia.pl");
-        nowy.setDataUrodzenia(LocalDate.of(2000, 1, 1));   // wymagane pole
-        Student saved = studentRepository.save(nowy);
-        log.info("Utworzono nowego studenta: {} {}", saved.getImie(), saved.getNazwisko());
-        return saved;
+        return studentRepository.findByNrIndeksu(nrIndeksu)
+                .orElseGet(() -> {
+                    Student nowy = new Student();
+                    nowy.setNrIndeksu(nrIndeksu);
+                    nowy.setImie("Jan");
+                    nowy.setNazwisko("Kowalski");
+                    nowy.setEmail("jan.kowalski@student.uczelnia.pl");
+                    nowy.setDataUrodzenia(LocalDate.of(2000, 1, 1));
+                    nowy.setCzyAktywny(true);
+                    Student saved = studentRepository.save(nowy);
+                    log.info("Utworzono nowego studenta: {} {} (indeks: {})",
+                            saved.getImie(), saved.getNazwisko(), saved.getNrIndeksu());
+                    return saved;
+                });
     }
 
-    /**
-     * Tworzy nowego użytkownika-studenta lub aktualizuje istniejącego,
-     * jeśli nie ma jeszcze powiązanego studenta.
-     */
     private void dodajLubAktualizujUzytkownikaStudenta(String username, String password,
                                                        Set<Rola> role, Student student) {
         Uzytkownik u = uzytkownikRepository.findByUsername(username).orElse(null);
         if (u == null) {
-            // Utwórz nowego użytkownika
             u = new Uzytkownik();
             u.setUsername(username);
             u.setPassword(passwordEncoder.encode(password));

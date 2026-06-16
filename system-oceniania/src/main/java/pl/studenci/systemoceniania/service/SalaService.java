@@ -15,7 +15,7 @@ import pl.studenci.systemoceniania.repository.SalaRepository;
 import java.util.List;
 
 @Service
-@Transactional   // domyślnie transakcje odczyt‑zapis dla metod modyfikujących
+@Transactional
 public class SalaService {
 
     private static final Logger log = LoggerFactory.getLogger(SalaService.class);
@@ -58,7 +58,6 @@ public class SalaService {
                 });
     }
 
-    // save i delete korzystają z domyślnej transakcji (@Transactional na klasie)
     public Sala save(Sala sala) {
         if (sala == null) {
             log.error("Próba zapisu null jako sala");

@@ -6,19 +6,19 @@ import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Entity
-@Table(name = "SEMESTRY", uniqueConstraints = {
+@Table(name = "semestry", uniqueConstraints = {
         @UniqueConstraint(columnNames = "nazwa")
 })
 public class Semestr {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_SEMESTRU", updatable = false)
+    @Column(name = "id_semestru", updatable = false)
     private Long id;
 
     @NotBlank(message = "Nazwa semestru jest wymagana")
     @Size(max = 20, message = "Nazwa semestru może mieć maksymalnie 20 znaków")
-    @Column(name = "NAZWA", nullable = false, unique = true, length = 20)
+    @Column(name = "nazwa", nullable = false, unique = true, length = 20)
     private String nazwa;
 
     public Semestr() {}

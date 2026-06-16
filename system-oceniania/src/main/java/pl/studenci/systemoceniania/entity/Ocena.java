@@ -6,32 +6,32 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
-@Table(name = "OCENY")
+@Table(name = "oceny")
 public class Ocena {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_OCENY", updatable = false)
+    @Column(name = "id_oceny", updatable = false)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "ID_ZAPISU", nullable = false)
+    @JoinColumn(name = "id_zapisu", nullable = false)
     private Zapisy zapis;
 
     @ManyToOne
-    @JoinColumn(name = "ID_TYPU", nullable = false)
+    @JoinColumn(name = "id_typu", nullable = false)
     private SlownikOcen typ;
 
     @NotNull(message = "Wartość oceny jest wymagana")
     @DecimalMin(value = "2.0", message = "Ocena nie może być mniejsza niż 2.0")
     @DecimalMax(value = "5.0", message = "Ocena nie może być większa niż 5.0")
-    @Column(name = "WARTOSC", nullable = false)
+    @Column(name = "wartosc", nullable = false)
     private Double wartosc;
 
-    @Column(name = "DATA_WYSTAWIENIA", updatable = false)
+    @Column(name = "data_wystawienia", updatable = false)
     private LocalDate dataWystawienia;
 
     @Size(max = 200, message = "Komentarz może mieć maksymalnie 200 znaków")
-    @Column(name = "KOMENTARZ")
+    @Column(name = "komentarz")
     private String komentarz;
 
     public Ocena() {

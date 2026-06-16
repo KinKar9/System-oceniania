@@ -2,6 +2,7 @@ package pl.studenci.systemoceniania.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.studenci.systemoceniania.entity.Uzytkownik;
 import pl.studenci.systemoceniania.repository.UzytkownikRepository;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,16 +43,22 @@ public class UzytkownikService implements UserDetailsService {
 
         if (!uzytkownik.isCzyAktywny()) {
             log.warn("Próba logowania nieaktywnego użytkownika: {}", username);
-            // POPRAWKA 1: ogólny komunikat — nie zdradza czy konto istnieje czy jest nieaktywne
             throw new UsernameNotFoundException("Nieprawidłowe dane logowania");
         }
-        log.debug("Załadowano użytkownika: {}", username);
+
+        // Jawny typ List<GrantedAuthority> zamiast var
+        List<GrantedAuthority> authorities = (uzytkownik.getRole() != null)
+                ? uzytkownik.getRole().stream()
+                .map(rola -> new SimpleGrantedAuthority("ROLE_" + rola.getNazwaRoli().name()))
+                .collect(Collectors.toList())
+                : Collections.emptyList();
+
+        log.debug("Załadowano użytkownika: {} z rolami: {}", username, authorities);
+
         return User.builder()
                 .username(uzytkownik.getUsername())
                 .password(uzytkownik.getPassword())
-                .authorities(uzytkownik.getRole().stream()
-                        .map(rola -> new SimpleGrantedAuthority("ROLE_" + rola.getNazwaRoli()))
-                        .collect(Collectors.toList()))
+                .authorities(authorities)
                 .build();
     }
 
@@ -63,27 +72,24 @@ public class UzytkownikService implements UserDetailsService {
             log.info("Zapisano użytkownika: {}", saved.getUsername());
             return saved;
         } catch (Exception e) {
-            log.error("Błąd podczas zapisu użytkownika: {}", e.getMessage());
+            log.error("Błąd podczas zapisu użytkownika: {}", e.getMessage(), e);
             throw new RuntimeException("Nie udało się zapisać użytkownika", e);
         }
     }
+
     @Transactional(readOnly = true)
     public Uzytkownik findByUsername(String username) {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Nazwa użytkownika nie może być pusta");
         }
-        Uzytkownik uzytkownik = uzytkownikRepository.findByUsername(username)
+        return uzytkownikRepository.findByUsername(username)
                 .orElseThrow(() -> {
                     log.warn("Nie znaleziono użytkownika o nazwie: {}", username);
                     return new UsernameNotFoundException("Brak użytkownika: " + username);
                 });
-        if (uzytkownik.getStudent() != null) {
-            uzytkownik.getStudent().getId();
-        }
-
-        return uzytkownik;
     }
 
+    @Transactional(readOnly = true)
     public Uzytkownik findByEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email nie może być pusty");
@@ -91,7 +97,7 @@ public class UzytkownikService implements UserDetailsService {
         return uzytkownikRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     log.warn("Nie znaleziono użytkownika z emailem: {}", email);
-                    return new RuntimeException("Nie znaleziono użytkownika z emailem: " + email);
+                    throw new RuntimeException("Nie znaleziono użytkownika z emailem: " + email);
                 });
     }
 
@@ -100,7 +106,6 @@ public class UzytkownikService implements UserDetailsService {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Nieprawidłowe ID użytkownika");
         }
-        // POPRAWKA 4: jedno zapytanie zamiast existsById + deleteById
         Uzytkownik uzytkownik = uzytkownikRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Próba usunięcia nieistniejącego użytkownika o ID: {}", id);
