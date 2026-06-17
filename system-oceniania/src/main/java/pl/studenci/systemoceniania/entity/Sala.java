@@ -9,10 +9,9 @@ import java.util.Objects;
 public class Sala {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sala_seq")
-    @SequenceGenerator(name = "sala_seq", sequenceName = "sala_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // ← ZMIENIONE z SEQUENCE na IDENTITY
     @Column(name = "id_sali", updatable = false)
-    private Long id;
+    private Integer id;   // ← ZMIENIONE z Long na Integer
 
     @NotBlank(message = "Numer sali jest wymagany")
     @Size(max = 20, message = "Numer sali może mieć maksymalnie 20 znaków")
@@ -36,12 +35,16 @@ public class Sala {
 
     public Sala() {}
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // GETTERY I SETTERY – z Integer zamiast Long
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
     public String getNumerSali() { return numerSali; }
     public void setNumerSali(String numerSali) { this.numerSali = numerSali; }
+
     public Integer getPojemnosc() { return pojemnosc; }
     public void setPojemnosc(Integer pojemnosc) { this.pojemnosc = pojemnosc; }
+
     public TypSali getTypSali() { return typSali; }
     public void setTypSali(TypSali typSali) { this.typSali = typSali; }
 

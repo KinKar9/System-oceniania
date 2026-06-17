@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.Set;
@@ -14,10 +13,9 @@ import java.util.Set;
 public class DashboardController {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
-    private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
     @GetMapping("/dashboard")
-    public String dashboard(Authentication authentication, Model model) {
+    public String dashboard(Authentication authentication) {
         // Zabezpieczenie przed null – unikamy NPE
         if (authentication == null) {
             log.warn("Próba dostępu do dashboardu bez uwierzytelnienia");
@@ -25,13 +23,16 @@ public class DashboardController {
         }
 
         Set<String> roles = AuthorityUtils.authorityListToSet(authentication.getAuthorities());
-        boolean isAdmin = roles.contains(ADMIN_ROLE);
-        model.addAttribute("isAdmin", isAdmin);
 
-        // Dodatkowa informacja o roli pracownika (może przydać się w widoku)
-        model.addAttribute("isPracownik", roles.contains("ROLE_PRACOWNIK"));
+        if (roles.contains("ROLE_STUDENT")) {
+            log.debug("Przekierowanie studenta: {}", authentication.getName());
+            return "redirect:/student/dashboard";
+        } else if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_PRACOWNIK")) {
+            log.debug("Przekierowanie pracownika/admina: {}", authentication.getName());
+            return "redirect:/pracownik/dashboard";
+        }
 
-        log.debug("Użytkownik {} zalogowany do dashboardu, isAdmin={}", authentication.getName(), isAdmin);
-        return "dashboard";
+        log.warn("Użytkownik {} nie ma przypisanej roli", authentication.getName());
+        return "redirect:/login";
     }
 }

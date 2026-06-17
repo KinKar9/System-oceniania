@@ -1,18 +1,31 @@
+-- ============================================================
+-- WŁĄCZ ROZSZERZENIE pgcrypto (do haszowania haseł)
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 BEGIN;
 
--- 1. Role
+-- ============================================================
+-- 1. ROLE
+-- ============================================================
 INSERT INTO rola (nazwa_roli) VALUES
                                   ('ADMIN'),
                                   ('PRACOWNIK'),
-                                  ('STUDENT');
+                                  ('STUDENT')
+    ON CONFLICT (nazwa_roli) DO NOTHING;
 
--- 2. Słownik ocen
+-- ============================================================
+-- 2. SŁOWNIK OCEN
+-- ============================================================
 INSERT INTO slownik_ocen (nazwa, waga) VALUES
                                            ('Kolokwium', 0.5),
                                            ('Egzamin', 0.8),
-                                           ('Projekt', 0.4);
+                                           ('Projekt', 0.4)
+    ON CONFLICT (nazwa) DO NOTHING;
 
--- 3. Pracownicy
+-- ============================================================
+-- 3. PRACOWNICY
+-- ============================================================
 INSERT INTO pracownicy (imie, nazwisko, tytul_naukowy, email) VALUES
                                                                   ('Andrzej', 'Kowalski', 'Dr inż.', 'andrzej.kowalski@uczelnia.pl'),
                                                                   ('Maria', 'Zielińska', 'Prof. dr hab.', 'maria.zielinska@uczelnia.pl'),
@@ -34,7 +47,9 @@ SELECT
 FROM generate_series(6, 20) i
     ON CONFLICT (email) DO NOTHING;
 
--- 4. Sale
+-- ============================================================
+-- 4. SALE
+-- ============================================================
 INSERT INTO sale (numer_sali, pojemnosc, typ_sali) VALUES
                                                        ('104-A', 30, 'LABORATORYJNA'),
                                                        ('215-B', 120, 'WYKLADOWA'),
@@ -43,9 +58,9 @@ INSERT INTO sale (numer_sali, pojemnosc, typ_sali) VALUES
                                                        ('111-A', 25, 'KOMPUTEROWA')
     ON CONFLICT (numer_sali) DO NOTHING;
 
-
--- 5. Kierunki
-
+-- ============================================================
+-- 5. KIERUNKI
+-- ============================================================
 INSERT INTO kierunki (nazwa, kod_kierunku, stopien, deleted)
 SELECT
     'Kierunek ' || i,
@@ -58,8 +73,9 @@ SELECT
 FROM generate_series(1, 50) i
     ON CONFLICT (kod_kierunku) DO NOTHING;
 
--- 6. Przedmioty
-
+-- ============================================================
+-- 6. PRZEDMIOTY
+-- ============================================================
 INSERT INTO przedmioty (kod_przedmiotu, nazwa, ects, kierunek_id)
 SELECT
     k.kod_kierunku || '-' || LPAD(p.nr::TEXT, 2, '0'),
@@ -70,9 +86,9 @@ FROM kierunki k
          CROSS JOIN LATERAL generate_series(1, floor(3 + random() * 3)::INT) AS p(nr)
 ON CONFLICT (kod_przedmiotu) DO NOTHING;
 
-
--- 7. Grupy
-
+-- ============================================================
+-- 7. GRUPY
+-- ============================================================
 INSERT INTO grupy (nazwa_grupy, limit_miejsc, id_przedmiotu, id_pracownika)
 SELECT
     p.kod_przedmiotu || '-G' || g.nr,
@@ -82,9 +98,9 @@ SELECT
 FROM przedmioty p
     CROSS JOIN LATERAL generate_series(1, floor(1 + random() * 2)::INT) AS g(nr);
 
-
--- 8. Studenci
-
+-- ============================================================
+-- 8. STUDENCI
+-- ============================================================
 INSERT INTO studenci (imie, nazwisko, nr_indeksu, email, data_urodzenia, secure_token, czy_aktywny)
 SELECT
     'Imię' || i,
@@ -93,13 +109,69 @@ SELECT
     'student' || i || '@student.uczelnia.pl',
     ('1995-01-01'::DATE + (random() * 3650)::INT),
     'token_' || i,
-    TRUE   -- ← dodaj aktywny status
+    TRUE
 FROM generate_series(1, 300) i
     ON CONFLICT (nr_indeksu) DO NOTHING;
 
+-- ============================================================
+-- 9. UŻYTKOWNICY – PRACOWNICY (zahaszowane hasła)
+-- ============================================================
+INSERT INTO uzytkownicy (username, password, email, czy_aktywny)
+SELECT
+    LOWER(imie || '.' || nazwisko),
+    crypt('haslo_' || LOWER(imie || '.' || nazwisko), gen_salt('bf')),
+    email,
+    TRUE
+FROM pracownicy
+    ON CONFLICT (email) DO NOTHING;
 
--- 9. Zapisy
+-- ============================================================
+-- 10. UŻYTKOWNICY – STUDENCI (zahaszowane hasła)
+-- ============================================================
+INSERT INTO uzytkownicy (username, password, email, id_studenta, czy_aktywny)
+SELECT
+    LOWER(imie || '.' || nazwisko || nr_indeksu),
+    crypt('student_' || nr_indeksu, gen_salt('bf')),
+    email,
+    id_studenta,
+    TRUE
+FROM studenci
+    ON CONFLICT (email) DO NOTHING;
 
+-- ============================================================
+-- 11. PRZYPISZ ROLE
+-- ============================================================
+
+-- PRACOWNICY → rola PRACOWNIK
+INSERT INTO uzytkownicy_role (id_uzytkownika, id_roli)
+SELECT
+    u.id_uzytkownika,
+    (SELECT id_roli FROM rola WHERE nazwa_roli = 'PRACOWNIK')
+FROM uzytkownicy u
+WHERE EXISTS (SELECT 1 FROM pracownicy p WHERE p.email = u.email)
+    ON CONFLICT DO NOTHING;
+
+-- STUDENCI → rola STUDENT
+INSERT INTO uzytkownicy_role (id_uzytkownika, id_roli)
+SELECT
+    u.id_uzytkownika,
+    (SELECT id_roli FROM rola WHERE nazwa_roli = 'STUDENT')
+FROM uzytkownicy u
+WHERE u.id_studenta IS NOT NULL
+    ON CONFLICT DO NOTHING;
+
+-- ADMIN (pierwszy pracownik)
+INSERT INTO uzytkownicy_role (id_uzytkownika, id_roli)
+SELECT
+    u.id_uzytkownika,
+    (SELECT id_roli FROM rola WHERE nazwa_roli = 'ADMIN')
+FROM uzytkownicy u
+WHERE u.username = 'andrzej.kowalski'
+    ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- 12. ZAPISY
+-- ============================================================
 DO $$
 DECLARE
 s RECORD;
@@ -107,7 +179,7 @@ s RECORD;
     g_ids INT[];
 BEGIN
 FOR s IN SELECT id_studenta FROM studenci LOOP
-    how_many := 1 + floor(random() * 3);   -- 1, 2 lub 3
+    how_many := 1 + floor(random() * 3);
 SELECT ARRAY_AGG(id_grupy ORDER BY random()) INTO g_ids
 FROM grupy
          LIMIT how_many;
@@ -119,7 +191,9 @@ END LOOP;
 END LOOP;
 END $$;
 
--- 10. Oceny
+-- ============================================================
+-- 13. OCENY
+-- ============================================================
 DO $$
 DECLARE
 z RECORD;
@@ -139,5 +213,73 @@ VALUES (
        ) ON CONFLICT (id_zapisu, id_typu) DO NOTHING;
 END LOOP;
 END $$;
+
+-- ============================================================
+-- 14. SEMESTRY
+-- ============================================================
+INSERT INTO semestry (nazwa) VALUES
+                                 ('Semestr zimowy 2024/2025'),
+                                 ('Semestr letni 2024/2025')
+    ON CONFLICT (nazwa) DO NOTHING;
+
+-- ============================================================
+-- 15. PLANY ZAJĘĆ
+-- ============================================================
+INSERT INTO plany_zajec (nazwa, pracownik_id, semestr_id, aktywny)
+SELECT
+    'Plan ' || sem.nazwa || ' - ' || u.username,
+    u.id_uzytkownika,
+    sem.id_semestru,
+    TRUE
+FROM uzytkownicy u
+         CROSS JOIN semestry sem
+WHERE EXISTS (
+    SELECT 1 FROM uzytkownicy_role ur
+                      JOIN rola r ON ur.id_roli = r.id_roli
+    WHERE ur.id_uzytkownika = u.id_uzytkownika
+      AND r.nazwa_roli = 'PRACOWNIK'
+)
+    LIMIT 10;
+
+-- ============================================================
+-- 16. WYŁĄCZ TRIGGER na czas wstawiania danych testowych
+-- ============================================================
+ALTER TABLE pozycje_planu DISABLE TRIGGER trg_sprawdz_kolizje;
+
+-- ============================================================
+-- 17. POZYCJE PLANU
+-- ============================================================
+INSERT INTO pozycje_planu (plan_zajec_id, przedmiot_id, prowadzacy_id, sala_id, grupa_id, dzien_tygodnia, godzina_rozpoczecia, godzina_zakonczenia)
+SELECT DISTINCT ON (pz.id, g.id_grupy)
+    pz.id,
+    (SELECT id_przedmiotu FROM przedmioty ORDER BY random() LIMIT 1),
+    u.id_uzytkownika,
+    s.id_sali,
+    g.id_grupy,
+    (ARRAY['PONIEDZIALEK', 'WTOREK', 'SRODA', 'CZWARTEK', 'PIATEK'])[floor(random() * 5 + 1)],
+    t.godzina_rozpoczecia,
+    t.godzina_zakonczenia
+FROM plany_zajec pz
+    CROSS JOIN uzytkownicy u
+    CROSS JOIN sale s
+    CROSS JOIN grupy g
+    CROSS JOIN LATERAL (
+    SELECT
+    ('08:00'::TIME + (floor(random() * 8) || ' hours')::INTERVAL)::TIME AS godzina_rozpoczecia,
+    ('08:00'::TIME + (floor(random() * 8) || ' hours')::INTERVAL + (interval '1 hour' + (floor(random() * 2) || ' hours')::INTERVAL))::TIME AS godzina_zakonczenia
+    ) t
+WHERE EXISTS (
+    SELECT 1 FROM uzytkownicy_role ur
+    JOIN rola r ON ur.id_roli = r.id_roli
+    WHERE ur.id_uzytkownika = u.id_uzytkownika
+  AND r.nazwa_roli = 'PRACOWNIK'
+    )
+  AND t.godzina_rozpoczecia < t.godzina_zakonczenia
+    LIMIT 100;
+
+-- ============================================================
+-- 18. WŁĄCZ TRIGGER z powrotem
+-- ============================================================
+ALTER TABLE pozycje_planu ENABLE TRIGGER trg_sprawdz_kolizje;
 
 COMMIT;

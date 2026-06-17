@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Pracownika</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ---------- NAGŁÓWEK ---------- */
+    h1 {
+      color: white;
+      font-size: 2.2rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .subtitle {
+      color: rgba(255,255,255,0.7);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    /* ---------- SIATKA – WYŚRODKOWANA ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      justify-items: center;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1.8rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+      max-width: 320px;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .card .icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .card h2 { font-size: 1.2rem; color: #2d3748; margin-bottom: 0.5rem; }
+    .card p { color: #4a5568; margin-bottom: 1rem; line-height: 1.5; }
+
+    /* ---------- PRZYCISKI ---------- */
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1a202c;
+      transform: translateY(-2px);
+    }
+    .btn-success {
+      background: #38a169;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #2f855a;
+    }
+    .btn-danger {
+      background: #e53e3e;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c53030;
+    }
+    .btn-student {
+      background: #3182ce;
+      color: white;
+    }
+    .btn-student:hover {
+      background: #2b6cb0;
+    }
+
+    /* ---------- STOPKA ---------- */
+    .footer-actions {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .logout-form { display: inline-block; }
+
+    /* ---------- RESPONSYWNOŚĆ ---------- */
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .card { max-width: 100%; }
+    }
+
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 1.6rem; }
+      .card { padding: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- ====== NAGŁÓWEK ====== -->
+  <h1>👨‍🏫 Panel Pracownika</h1>
+  <p class="subtitle">Witaj, <span th:text="${username}">pracowniku</span>! Zarządzaj systemem oceniania.</p>
+
+  <!-- ====== KARTY ====== -->
+  <div class="grid">
+    <!-- 📅 PLAN ZAJĘĆ -->
+    <div class="card">
+      <div class="icon">📅</div>
+      <h2>Plan zajęć</h2>
+      <p>Twórz i edytuj plany zajęć dla studentów.</p>
+      <a th:href="@{/pracownik/plany}" class="btn btn-success">Zarządzaj planem</a>
+    </div>
+
+    <!-- 📘 OCENY -->
+    <div class="card">
+      <div class="icon">📘</div>
+      <h2>Oceny</h2>
+      <p>Wystawiaj i przeglądaj oceny cząstkowe.</p>
+      <a th:href="@{/oceny}" class="btn btn-primary">Zarządzaj ocenami</a>
+    </div>
+
+    <!-- 📚 PRZEDMIOTY -->
+    <div class="card">
+      <div class="icon">📚</div>
+      <h2>Przedmioty</h2>
+      <p>Lista przedmiotów, dodawanie, edycja.</p>
+      <a th:href="@{/przedmioty}" class="btn btn-primary">Zarządzaj przedmiotami</a>
+    </div>
+
+    <!-- 🏢 SALE -->
+    <div class="card">
+      <div class="icon">🏢</div>
+      <h2>Sale</h2>
+      <p>Sale wykładowe i laboratoryjne.</p>
+      <a th:href="@{/sale}" class="btn btn-primary">Zarządzaj salami</a>
+    </div>
+
+    <!-- 🎓 KIERUNKI -->
+    <div class="card">
+      <div class="icon">🎓</div>
+      <h2>Kierunki</h2>
+      <p>Zarządzanie kierunkami studiów.</p>
+      <a th:href="@{/kierunki}" class="btn btn-primary">Zarządzaj kierunkami</a>
+    </div>
+
+    <!-- 👥 PRACOWNICY – TYLKO DLA ADMINA -->
+    <div th:if="${isAdmin}" class="card">
+      <div class="icon">👥</div>
+      <h2>Pracownicy</h2>
+      <p>Dodawanie, edycja, usuwanie pracowników.</p>
+      <a th:href="@{/pracownicy}" class="btn btn-primary">Zarządzaj pracownikami</a>
+    </div>
+  </div>
+
+  <!-- ====== STOPKA ====== -->
+  <div class="footer-actions">
+    <a th:href="@{/student/dashboard}" class="btn btn-student">👤 Przejdź do widoku studenta</a>
+    <form th:action="@{/logout}" method="post" class="logout-form">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+      <button type="submit" class="btn btn-danger">🚪 Wyloguj</button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

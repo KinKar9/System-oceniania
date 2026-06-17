@@ -45,8 +45,9 @@ public class SalaService {
         }
     }
 
+    // 🔥 METODA Z Integer
     @Transactional(readOnly = true)
-    public Sala findById(Long id) {
+    public Sala findById(Integer id) {
         if (id == null || id <= 0) {
             log.warn("Próba wyszukania sali z nieprawidłowym ID: {}", id);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieprawidłowe ID sali");
@@ -82,7 +83,8 @@ public class SalaService {
         }
     }
 
-    public void delete(Long id) {
+    // 🔥 ZMIENIONE NA Integer
+    public void delete(Integer id) {
         if (id == null || id <= 0) {
             log.warn("Próba usunięcia sali z nieprawidłowym ID: {}", id);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieprawidłowe ID sali");

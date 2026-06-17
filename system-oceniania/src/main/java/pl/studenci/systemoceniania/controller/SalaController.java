@@ -31,9 +31,9 @@ public class SalaController {
         return "sale/formularz";
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @GetMapping("/edycja/{id}")
-    public String edycja(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        // Walidacja ID
+    public String edycja(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
         if (id == null || id <= 0) {
             redirectAttributes.addFlashAttribute("error", "Nieprawidłowe ID sali.");
             return "redirect:/sale";
@@ -51,22 +51,30 @@ public class SalaController {
     @PostMapping("/zapisz")
     public String save(@Valid @ModelAttribute("sala") Sala sala, BindingResult bindingResult,
                        RedirectAttributes redirectAttributes) {
+        System.out.println("🔵 1. Weszło do metody save()");
+        System.out.println("🔵 2. Sala: " + sala.getNumerSali());
+
         if (bindingResult.hasErrors()) {
+            System.out.println("🔴 Błędy walidacji: " + bindingResult.getAllErrors());
             return "sale/formularz";
         }
         try {
+            System.out.println("🔵 3. Próba zapisu...");
             service.save(sala);
+            System.out.println("✅ 4. Zapisano!");
             redirectAttributes.addFlashAttribute("success", "Sala została zapisana pomyślnie.");
         } catch (Exception e) {
+            System.out.println("💥 5. BŁĄD: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Wystąpił błąd podczas zapisywania sali: " + e.getMessage());
             return "sale/formularz";
         }
         return "redirect:/sale";
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @PostMapping("/usun/{id}")
-    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        // Walidacja ID
+    public String delete(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         if (id == null || id <= 0) {
             redirectAttributes.addFlashAttribute("error", "Nieprawidłowe ID sali.");
             return "redirect:/sale";

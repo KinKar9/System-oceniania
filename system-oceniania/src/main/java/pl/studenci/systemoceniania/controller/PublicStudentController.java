@@ -41,34 +41,53 @@ public class PublicStudentController {
         }
 
         try {
-            Student student = studentService.findBySecureTokenWithOceny(token);
+            log.info("🟢 Szukam studenta z tokenem: {}", maskToken(token));
+
+            // 🔥 UŻYJ PROSTEJ METODY (bez JOIN FETCH)
+            Student student = studentService.findBySecureToken(token);
+
             if (student == null) {
-                log.warn("Nie znaleziono studenta dla tokena: {}", maskToken(token));
+                log.warn("❌ Nie znaleziono studenta dla tokena: {}", maskToken(token));
                 return PROFIL_NIEDOSTEPNY_VIEW;
             }
 
-            // Zabezpieczenie przed NullPointerException – jeśli zapisy są null, zwracamy pustą listę
+            log.info("✅ Znaleziono studenta: {} {}", student.getImie(), student.getNazwisko());
+
+            // Pobierz oceny – bezpiecznie
             List<Ocena> oceny = Optional.ofNullable(student.getZapisy())
                     .map(zapisy -> zapisy.stream()
-                            .filter(z -> z.getOceny() != null) // pomijamy zapisy bez ocen
+                            .filter(z -> z.getOceny() != null)
                             .flatMap(z -> z.getOceny().stream())
                             .toList())
                     .orElse(Collections.emptyList());
 
-            Double srednia = statystykiService
-                    .pobierzSredniaStudenta(student.getId())
-                    .orElse(null);
+            log.info("📊 Liczba ocen: {}", oceny.size());
+
+            // Oblicz średnią w Javie (pomiń statystykiService)
+            Double srednia = null;
+            if (!oceny.isEmpty()) {
+                double sumaIloczynow = 0.0;
+                double sumaWag = 0.0;
+                for (Ocena o : oceny) {
+                    double waga = o.getTyp().getWaga().doubleValue();
+                    sumaIloczynow += o.getWartosc() * waga;
+                    sumaWag += waga;
+                }
+                if (sumaWag > 0) {
+                    srednia = Math.round((sumaIloczynow / sumaWag) * 100.0) / 100.0;
+                }
+            }
 
             model.addAttribute("student", student);
             model.addAttribute("oceny", oceny);
             model.addAttribute("srednia", srednia);
 
-            log.info("Wyświetlono profil publiczny studenta ID: {}", student.getId());
+            log.info("✅ Wyświetlono profil publiczny studenta ID: {}", student.getId());
             return "student/profil_publiczny";
 
         } catch (Exception e) {
-            log.error("Błąd podczas wyświetlania profilu publicznego dla tokena {}: {}",
-                    maskToken(token), e.getMessage());
+            log.error("💥 Błąd podczas wyświetlania profilu publicznego dla tokena {}: {}",
+                    maskToken(token), e.getMessage(), e);
             return PROFIL_NIEDOSTEPNY_VIEW;
         }
     }

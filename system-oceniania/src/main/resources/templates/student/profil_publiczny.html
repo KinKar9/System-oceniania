@@ -2,58 +2,201 @@
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karta Ocen Studenta</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-header h1 {
+            color: #2d3748;
+            font-size: 1.8rem;
+        }
+        .card-header p {
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 2rem;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-item .label {
+            font-size: 0.85rem;
+            color: #718096;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .info-item .value {
+            font-size: 1.1rem;
+            color: #2d3748;
+            font-weight: 500;
+            padding: 0.25rem 0;
+        }
+        .srednia-box {
+            background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .srednia-box .srednia-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2b6cb0;
+        }
+        .srednia-box .srednia-label {
+            font-size: 1rem;
+            color: #2b6cb0;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:hover td {
+            background: #f7fafc;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 2rem;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+        .footer-note {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+        .badge-grade {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .badge-high { background: #c6f6d5; color: #22543d; }
+        .badge-medium { background: #fefcbf; color: #744210; }
+        .badge-low { background: #fed7d7; color: #9b2c2c; }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .info-grid { grid-template-columns: 1fr; }
+            .card { padding: 1.2rem; }
+            table { font-size: 0.85rem; }
+            th, td { padding: 8px 10px; }
+            .srednia-box .srednia-value { font-size: 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-<main>
-    <header>
-        <h1 id="page-title">E-Dziennik: Podgląd Ocen Studenta</h1>
-    </header>
-
-    <section aria-labelledby="student-info">
-        <h2 id="student-info">Dane studenta</h2>
-        <p><strong>Student:</strong> <span th:text="${student.imie + ' ' + student.nazwisko}">Jan Kowalski</span></p>
-        <p><strong>Numer indeksu:</strong> <span th:text="${student.nrIndeksu}">123456</span></p>
-    </section>
-
-    <hr/>
-
-    <section aria-labelledby="stats-info">
-        <h2 id="stats-info">Podsumowanie wyników</h2>
-        <div style="background-color: #f0f0f0; padding: 10px; display: inline-block; border-radius: 5px;">
-            <p style="margin: 0; font-size: 1.2em;">
-                <strong>Średnia ocen (wyliczona przez system):</strong>
-                <span th:text="${srednia}" style="font-weight: bold; color: #0066cc;">4.25</span>
-            </p>
+<div class="container">
+    <!-- Karta: Dane studenta -->
+    <div class="card">
+        <div class="card-header">
+            <h1>📋 Karta ocen studenta</h1>
+            <p>Publiczny podgląd ocen – ważny do odwołania</p>
         </div>
-    </section>
 
-    <br/>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Student</span>
+                <span class="value" th:text="${student.imie + ' ' + student.nazwisko}">Jan Kowalski</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Numer indeksu</span>
+                <span class="value" th:text="${student.nrIndeksu}">123456</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Kierunek</span>
+                <span class="value">—</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Semestr</span>
+                <span class="value">Bieżący</span>
+            </div>
+        </div>
+    </div>
 
-    <section aria-labelledby="grades-table">
-        <h2 id="grades-table">Wykaz ocen cząstkowych</h2>
+    <!-- Karta: Średnia -->
+    <div class="card">
+        <div class="srednia-box">
+            <span class="srednia-label">📈 Średnia ocen:</span>
+            <span class="srednia-value" th:text="${srednia != null ? srednia : '—'}">4.25</span>
+        </div>
+    </div>
 
-        <p th:if="${#lists.isEmpty(oceny)}">Brak wystawionych ocen w obecnym semestrze.</p>
+    <!-- Karta: Oceny -->
+    <div class="card">
+        <h2 style="color: #2d3748; margin-bottom: 1rem;">📊 Wykaz ocen cząstkowych</h2>
 
-        <table border="1" th:if="${!#lists.isEmpty(oceny)}">
+        <div th:if="${#lists.isEmpty(oceny)}" class="empty-message">
+            📭 Brak wystawionych ocen w obecnym semestrze.
+        </div>
+
+        <table th:if="${!#lists.isEmpty(oceny)}">
             <thead>
             <tr>
-                <th scope="col">Przedmiot</th>
-                <th scope="col">Ocena</th>
-                <th scope="col">Waga</th>
-                <th scope="col">Komentarz/Opis</th>
+                <th>Przedmiot</th>
+                <th>Ocena</th>
+                <th>Waga</th>
+                <th>Komentarz</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="o : ${oceny}">
-                <td th:text="${o.zapis.grupa.przedmiot.nazwa}">Brak danych</td>
-                <td th:text="${o.wartosc}" style="font-weight: bold;">5.0</td>
-                <td th:text="${o.typ.waga}">1</td>
-                <td th:text="${o.komentarz}">Kolokwium zaliczeniowe</td>
+                <td th:text="${o.zapis.grupa.przedmiot.nazwa}">-</td>
+                <td>
+                        <span class="badge-grade"
+                              th:classappend="${o.wartosc >= 4.0 ? 'badge-high' : (o.wartosc >= 3.0 ? 'badge-medium' : 'badge-low')}"
+                              th:text="${o.wartosc}">5.0</span>
+                </td>
+                <td th:text="${o.typ.waga}">1.0</td>
+                <td th:text="${o.komentarz}">-</td>
             </tr>
             </tbody>
         </table>
-    </section>
-</main>
+    </div>
+
+    <div class="footer-note">
+        🔒 Dane udostępnione przez studenta
+    </div>
+</div>
 </body>
 </html>

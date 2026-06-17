@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 import pl.studenci.systemoceniania.entity.Przedmiot;
 
 @Repository
-public interface PrzedmiotRepository extends JpaRepository<Przedmiot, Long> {}
+public interface PrzedmiotRepository extends JpaRepository<Przedmiot, Integer> {
+}

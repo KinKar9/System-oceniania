@@ -1,5 +1,5 @@
 -- Funkcja średnia studenta
-CREATE OR REPLACE FUNCTION srednia_studenta(p_id_studenta BIGINT)
+CREATE OR REPLACE FUNCTION srednia_studenta(p_id_studenta INTEGER)
 RETURNS NUMERIC AS $$
 DECLARE
 v_srednia NUMERIC;
@@ -8,14 +8,14 @@ BEGIN
         RETURN NULL;
 END IF;
 
-SELECT SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0)
+SELECT ROUND(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), 2)
 INTO v_srednia
 FROM oceny o
          JOIN zapisy z ON o.id_zapisu = z.id_zapisu
          JOIN slownik_ocen sw ON o.id_typu = sw.id_typu
 WHERE z.id_studenta = p_id_studenta;
 
-RETURN ROUND(v_srednia, 2);
+RETURN v_srednia;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
         RETURN NULL;
@@ -31,16 +31,16 @@ BEGIN
 FOR rec IN
 SELECT
     s.imie, s.nazwisko,
-    COALESCE(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), NULL) AS srednia,
-    RANK() OVER (ORDER BY COALESCE(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), NULL) DESC NULLS LAST) AS pozycja
+    ROUND(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), 2) AS srednia,
+    RANK() OVER (ORDER BY SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0) DESC) AS pozycja
 FROM studenci s
          LEFT JOIN zapisy z ON s.id_studenta = z.id_studenta
          LEFT JOIN oceny o ON z.id_zapisu = o.id_zapisu
          LEFT JOIN slownik_ocen sw ON o.id_typu = sw.id_typu
 WHERE (p_semestr IS NULL OR z.semestr = p_semestr)
 GROUP BY s.id_studenta, s.imie, s.nazwisko
-HAVING COALESCE(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), NULL) IS NOT NULL
-ORDER BY srednia DESC NULLS LAST
+HAVING SUM(o.wartosc * sw.waga) IS NOT NULL
+ORDER BY srednia DESC
     LIMIT 100
     LOOP
         RAISE NOTICE '%. % % : %', rec.pozycja, rec.imie, rec.nazwisko, rec.srednia;
@@ -48,30 +48,39 @@ END LOOP;
 END;
 $$;
 
--- Procedura sprawdzania zaliczenia
+-- Procedura sprawdzania zaliczenia (z CTE)
 CREATE OR REPLACE PROCEDURE sprawdz_zaliczenie(p_id_studenta INTEGER)
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_id_studenta IS NULL OR p_id_studenta <= 0 THEN
-        RETURN;
+        RAISE EXCEPTION 'Nieprawidłowy identyfikator studenta: %', p_id_studenta;
 END IF;
 
+WITH srednie AS (
+    SELECT z2.id_zapisu,
+           ROUND(SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0), 2) AS srednia
+    FROM zapisy z2
+             LEFT JOIN oceny o ON z2.id_zapisu = o.id_zapisu
+             LEFT JOIN slownik_ocen sw ON o.id_typu = sw.id_typu
+    WHERE z2.id_studenta = p_id_studenta
+    GROUP BY z2.id_zapisu
+)
 UPDATE zapisy z
 SET
-    czy_zaliczono = (src.srednia >= 3.0),
+    czy_zaliczono = (s.srednia >= 3.0),
     data_zakonczenia = CASE
-                           WHEN src.srednia >= 3.0 AND z.data_zakonczenia IS NULL THEN CURRENT_DATE
+                           WHEN s.srednia >= 3.0 AND z.data_zakonczenia IS NULL THEN CURRENT_DATE
                            ELSE z.data_zakonczenia
         END
-    FROM (
-        SELECT z2.id_zapisu,
-               SUM(o.wartosc * sw.waga) / NULLIF(SUM(sw.waga), 0) AS srednia
-        FROM zapisy z2
-        LEFT JOIN oceny o ON z2.id_zapisu = o.id_zapisu
-        LEFT JOIN slownik_ocen sw ON o.id_typu = sw.id_typu
-        WHERE z2.id_studenta = p_id_studenta
-        GROUP BY z2.id_zapisu
-    ) src
-WHERE z.id_zapisu = src.id_zapisu;
+    FROM srednie s
+WHERE z.id_zapisu = s.id_zapisu;
+
+IF NOT FOUND THEN
+        RAISE NOTICE 'Nie znaleziono zapisów dla studenta o ID: %', p_id_studenta;
+END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Wystąpił błąd: %', SQLERRM;
+        RAISE;
 END;
 $$;

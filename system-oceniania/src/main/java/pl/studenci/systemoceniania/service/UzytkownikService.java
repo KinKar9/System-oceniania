@@ -46,7 +46,6 @@ public class UzytkownikService implements UserDetailsService {
             throw new UsernameNotFoundException("Nieprawidłowe dane logowania");
         }
 
-        // Jawny typ List<GrantedAuthority> zamiast var
         List<GrantedAuthority> authorities = (uzytkownik.getRole() != null)
                 ? uzytkownik.getRole().stream()
                 .map(rola -> new SimpleGrantedAuthority("ROLE_" + rola.getNazwaRoli().name()))
@@ -101,17 +100,34 @@ public class UzytkownikService implements UserDetailsService {
                 });
     }
 
-    @Transactional
-    public void deleteById(Long id) {
+    // 🔥 METODA Z Integer
+    @Transactional(readOnly = true)
+    public Uzytkownik findById(Integer id) {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Nieprawidłowe ID użytkownika");
         }
-        Uzytkownik uzytkownik = uzytkownikRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Próba usunięcia nieistniejącego użytkownika o ID: {}", id);
-                    return new RuntimeException("Użytkownik o podanym ID nie istnieje");
-                });
+        return uzytkownikRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Użytkownik o ID " + id + " nie istnieje"));
+    }
+
+    // 🔥 ZMIENIONA NA Integer
+    @Transactional
+    public void deleteById(Integer id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Nieprawidłowe ID użytkownika");
+        }
+        Uzytkownik uzytkownik = findById(id);
         uzytkownikRepository.delete(uzytkownik);
         log.info("Usunięto użytkownika o ID: {}", id);
+    }
+
+    // 🔥 METODA findAllPracownicy
+    @Transactional(readOnly = true)
+    public List<Uzytkownik> findAllPracownicy() {
+        List<Uzytkownik> wszyscy = uzytkownikRepository.findAll();
+        return wszyscy.stream()
+                .filter(u -> u.getRole() != null)
+                .filter(u -> u.getRole().stream().anyMatch(r -> r.getNazwaRoli().name().equals("PRACOWNIK")))
+                .collect(Collectors.toList());
     }
 }

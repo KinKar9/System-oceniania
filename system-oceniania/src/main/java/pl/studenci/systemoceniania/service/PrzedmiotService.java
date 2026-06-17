@@ -45,8 +45,9 @@ public class PrzedmiotService {
         }
     }
 
+    // 🔥 TYLKO JEDNA METODA findById – z Integer
     @Transactional(readOnly = true)
-    public Przedmiot findById(Long id) {
+    public Przedmiot findById(Integer id) {
         if (id == null || id <= 0) {
             log.warn("Próba wyszukania przedmiotu z nieprawidłowym ID: {}", id);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieprawidłowe ID przedmiotu");
@@ -91,7 +92,8 @@ public class PrzedmiotService {
         }
     }
 
-    public void delete(Long id) {
+    // 🔥 ZMIENIONE NA Integer
+    public void delete(Integer id) {
         if (id == null || id <= 0) {
             log.warn("Próba usunięcia przedmiotu z nieprawidłowym ID: {}", id);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieprawidłowe ID przedmiotu");

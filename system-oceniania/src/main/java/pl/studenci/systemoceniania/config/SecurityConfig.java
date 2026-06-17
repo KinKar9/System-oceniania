@@ -38,16 +38,25 @@ public class SecurityConfig {
         http
                 .userDetailsService(userDetailsService)
                 .csrf(csrf -> csrf
-                                .ignoringRequestMatchers("/api/**")
+                        .ignoringRequestMatchers("/api/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Zasoby publiczne
                         .requestMatchers("/css/**", "/js/**", "/login", "/public/**", "/api/**").permitAll()
-                        .requestMatchers("/pracownicy/**").hasAnyRole("ADMIN", "PRACOWNIK")
+
+                        // Plan zajęć – pracownik i admin
+                        .requestMatchers("/pracownik/plany/**").hasAnyRole("ADMIN", "PRACOWNIK")
+
+                        // 🔥 TYLKO ADMIN MOŻE ZARZĄDZAĆ PRACOWNIKAMI
+                        .requestMatchers("/pracownicy/**").hasRole("ADMIN")
+
+                        // Pozostałe – pracownik i admin
                         .requestMatchers("/sale/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/przedmioty/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/oceny/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/kierunki/**").hasAnyRole("ADMIN", "PRACOWNIK")
                         .requestMatchers("/student/**").hasRole("STUDENT")
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -67,12 +76,13 @@ public class SecurityConfig {
     public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
         return (request, response, authentication) -> {
             Set<String> roles = AuthorityUtils.authorityListToSet(authentication.getAuthorities());
+
             if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_PRACOWNIK")) {
-                response.sendRedirect("/pracownicy");
+                response.sendRedirect("/pracownik/dashboard");
             } else if (roles.contains("ROLE_STUDENT")) {
                 response.sendRedirect("/student/dashboard");
             } else {
-                response.sendRedirect("/");
+                response.sendRedirect("/login");
             }
         };
     }

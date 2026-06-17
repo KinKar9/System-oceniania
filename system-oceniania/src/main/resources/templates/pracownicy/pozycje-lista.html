@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pozycje planu</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      padding: 2rem;
+    }
+    .container { max-width: 1200px; margin: auto; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .header h1 { color: white; font-size: 2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+    .header h1 span { font-weight: 300; opacity: 0.8; font-size: 1.2rem; }
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-success { background: #38a169; color: white; }
+    .btn-success:hover { background: #2f855a; transform: translateY(-2px); }
+    .btn-primary { background: #3182ce; color: white; }
+    .btn-primary:hover { background: #2b6cb0; transform: translateY(-2px); }
+    .btn-danger { background: #e53e3e; color: white; }
+    .btn-danger:hover { background: #c53030; transform: translateY(-2px); }
+    .btn-back { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(5px); }
+    .btn-back:hover { background: rgba(255,255,255,0.3); }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    thead {
+      background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    }
+    thead th {
+      color: white;
+      padding: 0.9rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    tbody tr {
+      transition: background 0.2s ease;
+      border-bottom: 1px solid #edf2f7;
+    }
+    tbody tr:hover { background: #f7fafc; }
+    tbody td { padding: 0.8rem 1rem; color: #2d3748; vertical-align: middle; }
+    .empty-message { text-align: center; padding: 2rem; color: #718096; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-monday { background: #feb2b2; color: #9b2c2c; }
+    .badge-tuesday { background: #fbd38d; color: #744210; }
+    .badge-wednesday { background: #f6e05e; color: #744210; }
+    .badge-thursday { background: #9ae6b4; color: #22543d; }
+    .badge-friday { background: #90cdf4; color: #2a4365; }
+
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .actions form { display: inline; }
+
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      table { font-size: 0.85rem; }
+      thead th, tbody td { padding: 0.5rem 0.6rem; }
+      .actions { flex-direction: column; gap: 0.3rem; }
+      .btn { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 Pozycje planu: <span th:text="${plan.nazwa}">Nazwa</span></h1>
+    <div>
+      <a th:href="@{/pracownik/plany/pozycje/dodaj/{id}(id=${plan.id})}" class="btn btn-success">➕ Dodaj pozycję</a>
+      <a th:href="@{/pracownik/plany}" class="btn btn-back">← Powrót</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div th:if="${#lists.isEmpty(pozycje)}" class="empty-message">
+      📭 Brak pozycji w tym planie. Kliknij "Dodaj pozycję" aby dodać pierwsze zajęcia.
+    </div>
+
+    <table th:unless="${#lists.isEmpty(pozycje)}">
+      <thead>
+      <tr>
+        <th>Przedmiot</th>
+        <th>Dzień</th>
+        <th>Godzina</th>
+        <th>Sala</th>
+        <th>Prowadzący</th>
+        <th>Akcje</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="p : ${pozycje}">
+        <td th:text="${p.przedmiot.nazwa}">Matematyka</td>
+        <td>
+                        <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(p.dzienTygodnia)}"
+                              th:text="${p.dzienTygodnia}">PONIEDZIALEK</span>
+        </td>
+        <td th:text="${#temporals.format(p.godzinaRozpoczecia, 'HH:mm')} + ' - ' + ${#temporals.format(p.godzinaZakonczenia, 'HH:mm')}">
+          08:00 - 09:30
+        </td>
+        <td th:text="${p.sala.numerSali}">A-101</td>
+        <td th:text="${p.prowadzacy.username}">dr Kowalski</td>
+        <td>
+          <div class="actions">
+            <a th:href="@{/pracownik/plany/pozycje/edycja/{id}(id=${p.id})}" class="btn btn-primary">✏️</a>
+            <form th:action="@{/pracownik/plany/pozycje/usun/{id}(id=${p.id})}" method="post">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Usunąć tę pozycję?')">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

@@ -1,10 +1,12 @@
 package pl.studenci.systemoceniania.controller.rest;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.studenci.systemoceniania.entity.Sala;
 import pl.studenci.systemoceniania.service.SalaService;
+
 import java.util.List;
 
 @RestController
@@ -22,8 +24,9 @@ public class SalaRestController {
         return service.findAll();
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @GetMapping("/{id}")
-    public ResponseEntity<Sala> getOne(@PathVariable Long id) {
+    public ResponseEntity<Sala> getOne(@PathVariable Integer id) {
         try {
             return ResponseEntity.ok(service.findById(id));
         } catch (Exception e) {
@@ -32,12 +35,13 @@ public class SalaRestController {
     }
 
     @PostMapping
-    public ResponseEntity<Sala> create(@RequestBody Sala sala) {
+    public ResponseEntity<Sala> create(@Valid @RequestBody Sala sala) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.save(sala));
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @PutMapping("/{id}")
-    public ResponseEntity<Sala> update(@PathVariable Long id, @RequestBody Sala sala) {
+    public ResponseEntity<Sala> update(@PathVariable Integer id, @Valid @RequestBody Sala sala) {
         try {
             Sala existing = service.findById(id);
             existing.setNumerSali(sala.getNumerSali());
@@ -49,8 +53,9 @@ public class SalaRestController {
         }
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

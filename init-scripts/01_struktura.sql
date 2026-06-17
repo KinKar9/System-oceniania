@@ -1,3 +1,47 @@
+-- ============================================================
+-- ROLA (najpierw, bo inne tabele mogą jej używać)
+-- ============================================================
+CREATE TABLE rola (
+                      id_roli INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                      nazwa_roli VARCHAR(30) NOT NULL UNIQUE,
+                      data_utworzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      data_aktualizacji TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
+-- SEMESTRY
+-- ============================================================
+CREATE TABLE semestry (
+                          id_semestru INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                          nazwa VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- ============================================================
+-- UŻYTKOWNICY (PRZED plany_zajec i pozycje_planu!)
+-- ============================================================
+CREATE TABLE uzytkownicy (
+                             id_uzytkownika INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                             username VARCHAR(50) NOT NULL UNIQUE,
+                             password VARCHAR(255) NOT NULL,
+                             email VARCHAR(100) NOT NULL UNIQUE,
+                             czy_aktywny BOOLEAN DEFAULT true,
+                             id_studenta INTEGER NULL,
+                             data_utworzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                             data_aktualizacji TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
+-- UŻYTKOWNICY – ROLE
+-- ============================================================
+CREATE TABLE uzytkownicy_role (
+                                  id_uzytkownika INTEGER NOT NULL REFERENCES uzytkownicy(id_uzytkownika),
+                                  id_roli INTEGER NOT NULL REFERENCES rola(id_roli),
+                                  PRIMARY KEY (id_uzytkownika, id_roli)
+);
+
+-- ============================================================
+-- KIERUNKI
+-- ============================================================
 CREATE TABLE kierunki (
                           id_kierunku INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                           nazwa VARCHAR(150) NOT NULL UNIQUE,
@@ -6,6 +50,9 @@ CREATE TABLE kierunki (
                           deleted BOOLEAN DEFAULT FALSE
 );
 
+-- ============================================================
+-- PRZEDMIOTY
+-- ============================================================
 CREATE TABLE przedmioty (
                             id_przedmiotu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                             kod_przedmiotu VARCHAR(15) NOT NULL UNIQUE,
@@ -15,6 +62,9 @@ CREATE TABLE przedmioty (
                             wersja INTEGER DEFAULT 0
 );
 
+-- ============================================================
+-- PRACOWNICY
+-- ============================================================
 CREATE TABLE pracownicy (
                             id_pracownika INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                             imie VARCHAR(50) NOT NULL,
@@ -24,7 +74,9 @@ CREATE TABLE pracownicy (
                             wersja INTEGER DEFAULT 0
 );
 
-
+-- ============================================================
+-- GRUPY
+-- ============================================================
 CREATE TABLE grupy (
                        id_grupy INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                        nazwa_grupy VARCHAR(50) NOT NULL,
@@ -33,6 +85,9 @@ CREATE TABLE grupy (
                        id_pracownika INTEGER NOT NULL REFERENCES pracownicy(id_pracownika)
 );
 
+-- ============================================================
+-- SALE
+-- ============================================================
 CREATE TABLE sale (
                       id_sali INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                       numer_sali VARCHAR(20) NOT NULL UNIQUE,
@@ -40,6 +95,9 @@ CREATE TABLE sale (
                       typ_sali VARCHAR(30) DEFAULT 'wykładowa'
 );
 
+-- ============================================================
+-- STUDENCI
+-- ============================================================
 CREATE TABLE studenci (
                           id_studenta INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                           imie VARCHAR(50) NOT NULL,
@@ -54,14 +112,20 @@ CREATE TABLE studenci (
                           czy_aktywny BOOLEAN DEFAULT TRUE NOT NULL
 );
 
+-- ============================================================
+-- SŁOWNIK OCEN
+-- ============================================================
 CREATE TABLE slownik_ocen (
                               id_typu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                              nazwa VARCHAR(50) NOT NULL,
+                              nazwa VARCHAR(50) NOT NULL UNIQUE,
                               waga NUMERIC(3,2) NOT NULL,
                               domyslny_zakres_min NUMERIC(2,1) DEFAULT 2.0,
                               domyslny_zakres_max NUMERIC(2,1) DEFAULT 5.0
 );
 
+-- ============================================================
+-- WARUNKI ZALICZENIA
+-- ============================================================
 CREATE TABLE warunki_zal (
                              id_warunku INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                              id_przedmiotu INTEGER NOT NULL REFERENCES przedmioty(id_przedmiotu),
@@ -71,6 +135,9 @@ CREATE TABLE warunki_zal (
                              wersja INTEGER DEFAULT 0
 );
 
+-- ============================================================
+-- ZAPISY
+-- ============================================================
 CREATE TABLE zapisy (
                         id_zapisu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                         id_studenta INTEGER NOT NULL REFERENCES studenci(id_studenta),
@@ -85,6 +152,9 @@ CREATE TABLE zapisy (
                         CHECK (status IN ('AKTYWNY', 'ZAKONCZONY', 'ANULOWANY'))
 );
 
+-- ============================================================
+-- OCENY
+-- ============================================================
 CREATE TABLE oceny (
                        id_oceny INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                        id_zapisu INTEGER NOT NULL REFERENCES zapisy(id_zapisu),
@@ -95,30 +165,9 @@ CREATE TABLE oceny (
                        UNIQUE (id_zapisu, id_typu)
 );
 
-CREATE TABLE rola (
-                      id_roli INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                      nazwa_roli VARCHAR(30) NOT NULL UNIQUE,
-                      data_utworzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                      data_aktualizacji TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE uzytkownicy (
-                             id_uzytkownika INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                             username VARCHAR(50) NOT NULL UNIQUE,
-                             password VARCHAR(255) NOT NULL,
-                             email VARCHAR(100) NOT NULL UNIQUE,
-                             czy_aktywny BOOLEAN DEFAULT true,
-                             id_studenta INTEGER NULL REFERENCES studenci(id_studenta),
-                             data_utworzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                             data_aktualizacji TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE uzytkownicy_role (
-                                  id_uzytkownika INTEGER NOT NULL REFERENCES uzytkownicy(id_uzytkownika),
-                                  id_roli INTEGER NOT NULL REFERENCES rola(id_roli),
-                                  PRIMARY KEY (id_uzytkownika, id_roli)
-);
-
+-- ============================================================
+-- HISTORIA OCEN
+-- ============================================================
 CREATE TABLE historia_ocen (
                                id_historii INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                                id_oceny INTEGER NOT NULL REFERENCES oceny(id_oceny) ON DELETE CASCADE,
@@ -129,6 +178,9 @@ CREATE TABLE historia_ocen (
                                operacja VARCHAR(20) NOT NULL
 );
 
+-- ============================================================
+-- LOGI SYSTEMU (dla triggerów)
+-- ============================================================
 CREATE TABLE logi_systemu (
                               id_logu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                               username VARCHAR(50) NOT NULL,
@@ -137,6 +189,9 @@ CREATE TABLE logi_systemu (
                               ip_adres VARCHAR(45)
 );
 
+-- ============================================================
+-- RANKINGI
+-- ============================================================
 CREATE TABLE rankingi (
                           id_rankingu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                           id_semestru VARCHAR(20),
@@ -144,6 +199,9 @@ CREATE TABLE rankingi (
                           dane_rankingu TEXT
 );
 
+-- ============================================================
+-- TOKENY
+-- ============================================================
 CREATE TABLE tokeny (
                         id_tokenu INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                         id_studenta INTEGER NOT NULL REFERENCES studenci(id_studenta),
@@ -152,9 +210,40 @@ CREATE TABLE tokeny (
                         typ_tokenu VARCHAR(20) DEFAULT 'RESET',
                         CHECK (typ_tokenu IN ('RESET', 'PUBLICZNY', 'VERIFY'))
 );
-CREATE INDEX idx_kierunki_deleted ON kierunki(deleted);
 
--- Indeksy
+-- ============================================================
+-- PLANY ZAJĘĆ (TERAZ UŻYTKOWNICY JUŻ ISTNIEJĄ!)
+-- ============================================================
+CREATE TABLE plany_zajec (
+                             id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                             nazwa VARCHAR(255) NOT NULL,
+                             pracownik_id INTEGER NOT NULL REFERENCES uzytkownicy(id_uzytkownika),
+                             semestr_id INTEGER REFERENCES semestry(id_semestru),
+                             data_utworzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                             aktywny BOOLEAN DEFAULT TRUE
+);
+
+-- ============================================================
+-- POZYCJE PLANU
+-- ============================================================
+CREATE TABLE pozycje_planu (
+                               id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                               plan_zajec_id INTEGER NOT NULL REFERENCES plany_zajec(id) ON DELETE CASCADE,
+                               przedmiot_id INTEGER NOT NULL REFERENCES przedmioty(id_przedmiotu),
+                               prowadzacy_id INTEGER NOT NULL REFERENCES uzytkownicy(id_uzytkownika),
+                               sala_id INTEGER NOT NULL REFERENCES sale(id_sali),
+                               grupa_id INTEGER REFERENCES grupy(id_grupy),
+                               dzien_tygodnia VARCHAR(20) NOT NULL,
+                               godzina_rozpoczecia TIME NOT NULL,
+                               godzina_zakonczenia TIME NOT NULL,
+                               CONSTRAINT check_godziny CHECK (godzina_rozpoczecia < godzina_zakonczenia),
+                               CONSTRAINT check_dzien CHECK (dzien_tygodnia IN ('PONIEDZIALEK', 'WTOREK', 'SRODA', 'CZWARTEK', 'PIATEK', 'SOBOTA', 'NIEDZIELA'))
+);
+
+-- ============================================================
+-- INDEKSY
+-- ============================================================
+CREATE INDEX idx_kierunki_deleted ON kierunki(deleted);
 CREATE INDEX idx_zapisy_student ON zapisy(id_studenta);
 CREATE INDEX idx_zapisy_grupa ON zapisy(id_grupy);
 CREATE INDEX idx_zapisy_status ON zapisy(status);
@@ -171,7 +260,21 @@ CREATE INDEX idx_tokeny_token ON tokeny(token);
 CREATE INDEX idx_historia_oceny ON historia_ocen(id_oceny);
 CREATE INDEX idx_historia_uzytkownik ON historia_ocen(uzytkownik);
 
--- Widok
+-- Indeksy dla planów zajęć
+CREATE INDEX idx_plany_pracownik ON plany_zajec(pracownik_id);
+CREATE INDEX idx_plany_semestr ON plany_zajec(semestr_id);
+CREATE INDEX idx_plany_aktywny ON plany_zajec(aktywny);
+
+CREATE INDEX idx_pozycje_plan ON pozycje_planu(plan_zajec_id);
+CREATE INDEX idx_pozycje_przedmiot ON pozycje_planu(przedmiot_id);
+CREATE INDEX idx_pozycje_prowadzacy ON pozycje_planu(prowadzacy_id);
+CREATE INDEX idx_pozycje_sala ON pozycje_planu(sala_id);
+CREATE INDEX idx_pozycje_grupa ON pozycje_planu(grupa_id);
+CREATE INDEX idx_pozycje_dzien ON pozycje_planu(dzien_tygodnia);
+
+-- ============================================================
+-- WIDOKI
+-- ============================================================
 CREATE OR REPLACE VIEW widok_plan_zajec AS
 SELECT
     g.nazwa_grupy,
@@ -182,7 +285,6 @@ FROM grupy g
          JOIN pracownicy pr ON g.id_pracownika = pr.id_pracownika;
 
 COMMENT ON VIEW widok_plan_zajec IS 'Widok planu zajęć – grupa, przedmiot, prowadzący (bez sal)';
-
 COMMENT ON TABLE tokeny IS 'Przechowuje tokeny bezpieczeństwa dla studentów';
 COMMENT ON COLUMN uzytkownicy.id_studenta IS 'Opcjonalne powiązanie użytkownika ze studentem – relacja 1:1';
 COMMENT ON TABLE historia_ocen IS 'Rejestr zmian w tabeli oceny – automatycznie wypełniany przez trigger';

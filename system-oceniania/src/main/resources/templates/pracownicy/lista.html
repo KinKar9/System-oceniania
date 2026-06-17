@@ -4,103 +4,408 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Oceniania - Pracownicy</title>
-  <link rel="stylesheet" th:href="@{/css/style.css}">
   <style>
-    /* Dodatkowe style dla responsywności i komunikatów */
-    .table-responsive {
-      overflow-x: auto;
+    /* ---------- RESET I GLOBALNE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ---------- NAGŁÓWEK ---------- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      color: white;
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header h1 span {
+      font-weight: 300;
+      opacity: 0.8;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ---------- PRZYCISKI ---------- */
+    .btn {
+      display: inline-block;
+      padding: 0.7rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #2d3748;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-delete {
+      background: #fc8181;
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-delete:hover {
+      background: #f56565;
+      transform: translateY(-2px);
+    }
+
+    .btn-back {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      backdrop-filter: blur(5px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+    }
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* ---------- TABELA ---------- */
+    .table-wrapper {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.95rem;
     }
-    .empty-row td {
-      text-align: center;
-      padding: 20px;
-      font-style: italic;
-      color: #666;
+
+    thead {
+      background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+      border-radius: 12px 12px 0 0;
     }
-    .btn-delete {
-      background: none;
+
+    thead th {
+      color: white;
+      padding: 1rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    thead th:first-child {
+      border-radius: 12px 0 0 0;
+    }
+
+    thead th:last-child {
+      border-radius: 0 12px 0 0;
+    }
+
+    tbody tr {
+      transition: background 0.2s ease;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    tbody tr:hover {
+      background: #f7fafc;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody td {
+      padding: 0.9rem 1rem;
+      color: #2d3748;
+      vertical-align: middle;
+    }
+
+    /* ---------- BADGE TYTUŁÓW ---------- */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-prof { background: #ebf8ff; color: #2b6cb0; }
+    .badge-dr { background: #fefcbf; color: #744210; }
+    .badge-mgr { background: #c6f6d5; color: #22543d; }
+    .badge-other { background: #e2e8f0; color: #2d3748; }
+
+    /* ---------- AKCJE ---------- */
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .actions form {
+      display: inline;
+    }
+
+    .btn-edit {
+      display: inline-block;
+      background: #4299e1;
+      color: white;
+      padding: 0.3rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-edit:hover {
+      background: #3182ce;
+      transform: translateY(-2px);
+    }
+
+    .btn-delete-sm {
+      background: #fc8181;
+      color: white;
+      padding: 0.3rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
       border: none;
-      color: #e74c3c;
       cursor: pointer;
-      text-decoration: underline;
-      padding: 0;
-      font-size: inherit;
+      transition: all 0.2s ease;
     }
-    .btn-delete:hover {
-      color: #c0392b;
+    .btn-delete-sm:hover {
+      background: #f56565;
+      transform: translateY(-2px);
     }
+
+    /* ---------- KOMUNIKATY ---------- */
     .flash-message {
-      padding: 10px;
-      margin-bottom: 20px;
-      border-radius: 4px;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
+
     .flash-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background: #c6f6d5;
+      color: #22543d;
+      border-left: 4px solid #38a169;
     }
+
     .flash-error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+      background: #fed7d7;
+      color: #9b2c2c;
+      border-left: 4px solid #e53e3e;
+    }
+
+    /* ---------- PUSTY STAN ---------- */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state h3 {
+      color: #2d3748;
+      margin-bottom: 0.25rem;
+    }
+
+    .empty-state p {
+      color: #718096;
+    }
+
+    /* ---------- STOPKA ---------- */
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .footer span {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.85rem;
+    }
+
+    /* ---------- RESPONSYWNOŚĆ ---------- */
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+
+      .header h1 { font-size: 1.6rem; }
+
+      .table-wrapper { padding: 1rem; }
+
+      table { font-size: 0.85rem; }
+
+      thead th, tbody td { padding: 0.6rem 0.8rem; }
+
+      .actions {
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .btn-edit, .btn-delete-sm {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        text-align: center;
+      }
+
+      table {
+        font-size: 0.75rem;
+      }
+
+      thead th, tbody td {
+        padding: 0.4rem 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
-<main>
-  <h1 id="main-heading">Zarządzanie Pracownikami</h1>
 
-  <!-- Miejsce na komunikaty flash (sukces/błąd) -->
-  <div th:if="${flashMessage}" class="flash-message" th:classappend="${flashType == 'success' ? 'flash-success' : 'flash-error'}" th:text="${flashMessage}"></div>
-
-  <div style="margin-bottom: 20px;">
-    <a th:href="@{/pracownicy/nowy}" class="btn">➕ Dodaj nowego pracownika</a>
+<div class="container">
+  <!-- ====== NAGŁÓWEK ====== -->
+  <div class="header">
+    <h1>👨‍🏫 <span>Zarządzanie Pracownikami</span></h1>
+    <div class="header-actions">
+      <a th:href="@{/pracownicy/nowy}" class="btn btn-primary">➕ Nowy pracownik</a>
+      <a th:href="@{/dashboard}" class="btn btn-back">← Powrót</a>
+    </div>
   </div>
 
-  <section aria-label="Lista zarejestrowanych pracowników">
-    <h2>Zarejestrowani pracownicy</h2>
-    <div class="table-responsive">
+  <!-- ====== KOMUNIKATY ====== -->
+  <div th:if="${flashMessage}" class="flash-message" th:classappend="${flashType == 'success' ? 'flash-success' : 'flash-error'}" th:text="${flashMessage}"></div>
+
+  <!-- ====== TABELA ====== -->
+  <div class="table-wrapper">
+    <div class="table-scroll">
       <table>
         <thead>
         <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Tytuł naukowy</th>
-          <th scope="col">Imię</th>
-          <th scope="col">Nazwisko</th>
-          <th scope="col">Akcje</th>
+          <th>ID</th>
+          <th>Tytuł</th>
+          <th>Imię</th>
+          <th>Nazwisko</th>
+          <th>Email</th>
+          <th style="text-align: center;">Akcje</th>
         </tr>
         </thead>
         <tbody>
-        <!-- Obsługa pustej listy -->
-        <tr th:if="${#lists.isEmpty(pracownicy)}" class="empty-row">
-          <td colspan="5">Brak zarejestrowanych pracowników</td>
+        <!-- PUSTY STAN -->
+        <tr th:if="${pracownicy == null or #lists.isEmpty(pracownicy)}">
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="icon">📭</div>
+              <h3>Brak pracowników</h3>
+              <p>Kliknij przycisk "Nowy pracownik" aby dodać pierwszą osobę.</p>
+            </div>
+          </td>
         </tr>
-        <tr th:each="p : ${pracownicy}" th:unless="${#lists.isEmpty(pracownicy)}">
+
+        <!-- LISTA PRACOWNIKÓW -->
+        <tr th:each="p : ${pracownicy}" th:unless="${pracownicy == null or #lists.isEmpty(pracownicy)}">
           <td th:text="${p.id}">1</td>
-          <td th:text="${p.tytulNaukowy}">Dr</td>
+          <td>
+                            <span th:switch="${p.tytulNaukowy}">
+                                <span th:case="'Prof. dr hab.'" class="badge badge-prof">Prof. dr hab.</span>
+                                <span th:case="'Dr inż.'" class="badge badge-dr">Dr inż.</span>
+                                <span th:case="'Dr hab.'" class="badge badge-dr">Dr hab.</span>
+                                <span th:case="'Dr'" class="badge badge-dr">Dr</span>
+                                <span th:case="'Mgr inż.'" class="badge badge-mgr">Mgr inż.</span>
+                                <span th:case="'Mgr'" class="badge badge-mgr">Mgr</span>
+                                <span th:case="*" th:text="${p.tytulNaukowy != null ? p.tytulNaukowy : '-'}"></span>
+                            </span>
+          </td>
           <td th:text="${p.imie}">Jan</td>
           <td th:text="${p.nazwisko}">Kowalski</td>
-          <td class="actions">
-            <a th:href="@{/pracownicy/edycja/{id}(id=${p.id})}" class="btn" th:aria-label="'Edytuj pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}">Edytuj</a>
-            <form th:action="@{/pracownicy/usun/{id}(id=${p.id})}" method="post" style="display:inline;">
-              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-              <button type="submit" class="btn-delete"
-                      th:aria-label="'Usuń pracownika ' + ${p.imie} + ' ' + ${p.nazwisko}"
-                      onclick="return confirm('Czy na pewno chcesz usunąć tego pracownika?')">
-                Usuń
-              </button>
-            </form>
+          <td th:text="${p.email}">jan.kowalski@uczelnia.pl</td>
+          <td>
+            <div class="actions">
+              <a th:href="@{/pracownicy/edycja/{id}(id=${p.id})}" class="btn-edit">✏️ Edytuj</a>
+              <form th:action="@{/pracownicy/usun/{id}(id=${p.id})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="btn-delete-sm"
+                        onclick="return confirm('Czy na pewno chcesz usunąć pracownika ${p.imie} ${p.nazwisko}?')">
+                  🗑️ Usuń
+                </button>
+              </form>
+            </div>
           </td>
         </tr>
         </tbody>
       </table>
     </div>
-  </section>
+  </div>
 
-  <a th:href="@{/dashboard}" class="btn-secondary">← Powrót do panelu</a>
-</main>
+  <!-- ====== STOPKA ====== -->
+  <div class="footer">
+    <span>System Oceniania &bull; Zarządzanie pracownikami</span>
+  </div>
+</div>
+
 </body>
 </html>

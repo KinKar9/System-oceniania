@@ -13,7 +13,7 @@ public class Przedmiot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_przedmiotu", updatable = false)
-    private Long id;
+    private Integer id;
 
     @NotBlank(message = "Kod przedmiotu jest wymagany")
     @Size(max = 15, message = "Kod może mieć maksymalnie 15 znaków")
@@ -69,19 +69,27 @@ public class Przedmiot {
         }
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ========== GETTERY I SETTERY ==========
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
     public String getKodPrzedmiotu() { return kodPrzedmiotu; }
     public void setKodPrzedmiotu(String kodPrzedmiotu) { this.kodPrzedmiotu = kodPrzedmiotu; }
+
     public String getNazwa() { return nazwa; }
     public void setNazwa(String nazwa) { this.nazwa = nazwa; }
+
     public Integer getEcts() { return ects; }
     public void setEcts(Integer ects) { this.ects = ects; }
+
     public Kierunek getKierunek() { return kierunek; }
     public void setKierunek(Kierunek kierunek) { this.kierunek = kierunek; }
+
     public List<Grupa> getGrupy() { return grupy; }
     public void setGrupy(List<Grupa> grupy) { this.grupy = grupy; }
+
     public WarunkiZal getWarunkiZal() { return warunkiZal; }
+
     public Integer getVersion() { return version; }
     public void setVersion(Integer version) { this.version = version; }
 

@@ -10,6 +10,7 @@ import pl.studenci.systemoceniania.entity.Student;
 import pl.studenci.systemoceniania.repository.StudentRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -110,12 +111,63 @@ public class StudentService {
                 });
     }
 
+    // ============================================================
+    // 🔥 NOWA METODA – znajdź studenta po tokenie (bez JOIN FETCH)
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public Student findBySecureToken(String token) {
+        if (token == null || token.isBlank()) {
+            log.warn("Próba wyszukania z pustym tokenem");
+            return null;
+        }
+        log.debug("Szukam studenta z tokenem: {}", maskToken(token));
+        return repository.findBySecureToken(token).orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public Student findBySecureTokenWithOceny(String token) {
         if (token == null || token.isBlank()) {
             return null;
         }
+        log.debug("Szukam studenta z tokenem (z ocenami): {}", maskToken(token));
         return repository.findBySecureTokenWithOceny(token).orElse(null);
+    }
+
+    // ============================================================
+    // 🔗 GENEROWANIE LINKU – bezpośrednia aktualizacja
+    // ============================================================
+
+    @Transactional
+    public String generatePublicToken(Long studentId) {
+        if (!repository.existsById(studentId)) {
+            log.warn("Nie znaleziono studenta o ID: {}", studentId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Student o ID " + studentId + " nie istnieje");
+        }
+
+        String newToken = UUID.randomUUID().toString();
+        int updated = repository.updateSecureToken(studentId, newToken);
+        if (updated > 0) {
+            log.info("Wygenerowano nowy token publiczny dla studenta ID: {}", studentId);
+            return newToken;
+        } else {
+            log.error("Nie udało się zaktualizować tokena dla studenta ID: {}", studentId);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Nie udało się wygenerować linku publicznego");
+        }
+    }
+
+    @Transactional
+    public void deactivatePublicToken(Long studentId) {
+        int updated = repository.clearSecureToken(studentId);
+        if (updated > 0) {
+            log.info("Dezaktywowano token publiczny dla studenta ID: {}", studentId);
+        } else {
+            log.warn("Nie znaleziono studenta o ID: {}", studentId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Student o ID " + studentId + " nie istnieje");
+        }
     }
 
     private String maskToken(String token) {

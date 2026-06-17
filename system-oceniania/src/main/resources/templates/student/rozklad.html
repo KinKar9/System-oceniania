@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mój rozkład zajęć</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        .container { max-width: 1100px; margin: auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.3); }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(5, 1fr);
+            gap: 2px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .grid-cell {
+            background: white;
+            padding: 0.75rem 0.5rem;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .grid-cell.header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.75rem 0.5rem;
+            min-height: 50px;
+        }
+
+        .grid-cell.time-slot {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #2d3748;
+            min-height: 60px;
+        }
+
+        .grid-cell .subject {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 0.9rem;
+        }
+        .grid-cell .room {
+            font-size: 0.75rem;
+            color: #718096;
+        }
+        .grid-cell .teacher {
+            font-size: 0.75rem;
+            color: #4a5568;
+        }
+
+        .grid-cell.has-class {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 3rem;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+
+        .grid-cell .class-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .schedule-grid {
+                grid-template-columns: 60px repeat(5, 1fr);
+                font-size: 0.75rem;
+            }
+            .grid-cell { padding: 0.4rem 0.2rem; min-height: 50px; }
+            .grid-cell .subject { font-size: 0.75rem; }
+            .grid-cell .room, .grid-cell .teacher { font-size: 0.65rem; }
+            .grid-cell.header { font-size: 0.7rem; padding: 0.4rem 0.2rem; min-height: 40px; }
+            .grid-cell.time-slot { min-height: 50px; font-size: 0.7rem; }
+        }
+
+        @media (max-width: 480px) {
+            .schedule-grid {
+                grid-template-columns: 50px repeat(5, 1fr);
+                font-size: 0.65rem;
+            }
+            .grid-cell { padding: 0.2rem 0.1rem; min-height: 40px; }
+            .grid-cell .subject { font-size: 0.65rem; }
+            .grid-cell .room, .grid-cell .teacher { font-size: 0.55rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📅 Mój tygodniowy rozkład zajęć</h1>
+        <a th:href="@{/dashboard}" class="btn btn-back">← Powrót</a>
+    </div>
+
+    <div class="card">
+        <div th:if="${#lists.isEmpty(plan)}" class="empty-message">
+            📭 Brak zajęć w planie na bieżący tydzień.
+        </div>
+
+        <div th:unless="${#lists.isEmpty(plan)}" class="schedule-grid">
+            <!-- Nagłówek -->
+            <div class="grid-cell header">Godzina</div>
+            <div class="grid-cell header">Poniedziałek</div>
+            <div class="grid-cell header">Wtorek</div>
+            <div class="grid-cell header">Środa</div>
+            <div class="grid-cell header">Czwartek</div>
+            <div class="grid-cell header">Piątek</div>
+
+            <!-- Wiersze godzinowe (8:00 - 20:00) -->
+            <div th:each="godzina : ${godziny}">
+                <div class="grid-cell time-slot" th:text="${godzina}">8:00</div>
+
+                <!-- Dni tygodnia -->
+                <div th:each="dzien : ${dni}" class="grid-cell"
+                     th:classappend="${#lists.contains(zajeciaMap[dzien], godzina)} ? 'has-class' : ''">
+                    <div th:if="${#lists.contains(zajeciaMap[dzien], godzina)}" class="class-info">
+                        <span class="subject">
+                            <span th:text="${zajeciaMap[dzien + '_' + godzina + '_przedmiot']}">Matematyka</span>
+                        </span>
+                        <span class="room" th:text="${'Sala: ' + zajeciaMap[dzien + '_' + godzina + '_sala']}">Sala: 101</span>
+                        <span class="teacher" th:text="${'Prowadzący: ' + zajeciaMap[dzien + '_' + godzina + '_prowadzacy']}">dr Kowalski</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

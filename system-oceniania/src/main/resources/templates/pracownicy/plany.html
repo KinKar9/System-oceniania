@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plany zajęć</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            padding: 2rem;
+        }
+        .container { max-width: 1100px; margin: auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        h1 { color: white; font-size: 2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .btn {
+            display: inline-block;
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-success { background: #38a169; color: white; }
+        .btn-success:hover { background: #2f855a; transform: translateY(-2px); }
+        .btn-primary { background: #3182ce; color: white; }
+        .btn-primary:hover { background: #2b6cb0; transform: translateY(-2px); }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; transform: translateY(-2px); }
+        .btn-info { background: #4299e1; color: white; }
+        .btn-info:hover { background: #3182ce; transform: translateY(-2px); }
+        .btn-back { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(5px); }
+        .btn-back:hover { background: rgba(255,255,255,0.3); }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 2rem;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f7fafc;
+            color: #2d3748;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:hover td { background: #f7fafc; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .actions form { display: inline; }
+        .btn-sm { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .card { padding: 1rem; }
+            table { font-size: 0.85rem; }
+            th, td { padding: 8px 10px; }
+            .actions { flex-direction: column; gap: 4px; }
+            .btn-sm { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📅 Plany zajęć</h1>
+        <div>
+            <a th:href="@{/pracownik/plany/nowy}" class="btn btn-success">➕ Nowy plan</a>
+            <a th:href="@{/pracownik/dashboard}" class="btn btn-back">← Powrót</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div th:if="${#lists.isEmpty(plany)}" class="empty-message">
+            📭 Brak utworzonych planów zajęć.
+        </div>
+
+        <table th:if="${!#lists.isEmpty(plany)}">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nazwa</th>
+                <th>Semestr</th>
+                <th>Data utworzenia</th>
+                <th>Status</th>
+                <th>Akcje</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${plany}">
+                <td th:text="${p.id}">1</td>
+                <td th:text="${p.nazwa}">Plan semestru</td>
+                <td th:text="${p.semestr != null ? p.semestr.nazwa : 'brak'}">-</td>
+                <td th:text="${#temporals.format(p.dataUtworzenia, 'dd-MM-yyyy HH:mm')}">-</td>
+                <td>
+                    <span th:text="${p.aktywny ? '✅ Aktywny' : '❌ Nieaktywny'}"></span>
+                </td>
+                <td class="actions">
+                    <!-- 🔥 NOWY PRZYCISK: POZYCJE -->
+                    <a th:href="@{/pracownik/plany/pozycje/{id}(id=${p.id})}" class="btn btn-info btn-sm">📋 Pozycje</a>
+                    <a th:href="@{/pracownik/plany/edycja/{id}(id=${p.id})}" class="btn btn-primary btn-sm">✏️ Edytuj</a>
+                    <form th:action="@{/pracownik/plany/usun/{id}(id=${p.id})}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Czy na pewno usunąć ten plan?')">🗑️ Usuń</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

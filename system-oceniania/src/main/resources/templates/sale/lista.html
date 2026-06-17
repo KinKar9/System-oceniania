@@ -4,142 +4,342 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Oceniania - Sale</title>
-  <link rel="stylesheet" th:href="@{/css/style.css}">
   <style>
-    .table-responsive {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+    /* ---------- RESET I GLOBALNE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .empty-state {
-      text-align: center;
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 2rem;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      margin: 1rem 0;
-      color: #6c757d;
     }
-    .loading-spinner {
-      display: none;
-      text-align: center;
-      padding: 1rem;
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    .btn-danger {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-danger:hover {
-      background-color: #c82333;
-    }
-    .btn-warning {
-      background-color: #ffc107;
-      color: #212529;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-warning:hover {
-      background-color: #e0a800;
-    }
-    .action-buttons {
+
+    /* ---------- NAGŁÓWEK ---------- */
+    .header {
       display: flex;
-      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      color: white;
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header h1 span {
+      font-weight: 300;
+      opacity: 0.8;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
       flex-wrap: wrap;
     }
-    @media (max-width: 600px) {
-      .action-buttons {
-        flex-direction: column;
-        gap: 4px;
+
+    /* ---------- PRZYCISKI ---------- */
+    .btn {
+      display: inline-block;
+      padding: 0.7rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #667eea;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-edit {
+      background: #4299e1;
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .btn-edit:hover {
+      background: #3182ce;
+      transform: translateY(-2px);
+    }
+
+    .btn-delete {
+      background: #fc8181;
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-delete:hover {
+      background: #f56565;
+      transform: translateY(-2px);
+    }
+
+    .btn-back {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      backdrop-filter: blur(5px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+    }
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ---------- KARTY ---------- */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .card-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .card-id {
+      font-size: 0.75rem;
+      color: #a0aec0;
+      background: #edf2f7;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body .detail {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #4a5568;
+      font-size: 0.95rem;
+    }
+
+    .card-body .detail .label {
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 80px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-lecture { background: #ebf8ff; color: #2b6cb0; }
+    .badge-lab { background: #fefcbf; color: #744210; }
+    .badge-computer { background: #c6f6d5; color: #22543d; }
+    .badge-seminar { background: #fed7d7; color: #9b2c2c; }
+    .badge-other { background: #e2e8f0; color: #2d3748; }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #edf2f7;
+    }
+
+    /* ---------- PUSTY STAN ---------- */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      backdrop-filter: blur(5px);
+    }
+
+    .empty-state .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h2 {
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: #718096;
+    }
+
+    /* ---------- STOPKA ---------- */
+    .footer {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ---------- RESPONSYWNOŚĆ ---------- */
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+
+      .header h1 { font-size: 1.6rem; }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 1.2rem;
+      }
+
+      .card-number {
+        font-size: 1.2rem;
       }
     }
-    .back-link {
-      display: inline-block;
-      margin-top: 20px;
+
+    @media (max-width: 480px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        text-align: center;
+      }
+
+      .card-actions {
+        flex-direction: column;
+      }
+
+      .card-actions .btn {
+        text-align: center;
+      }
     }
   </style>
 </head>
 <body>
-<main>
-  <h1 id="main-heading">Zarządzanie Salami</h1>
 
-  <div style="margin-bottom: 20px;">
-    <a th:href="@{/sale/nowy}" class="btn btn-primary" aria-label="Przejdź do formularza dodawania nowej sali">
-      <span aria-hidden="true">➕</span> Dodaj nową salę
-    </a>
+<div class="container">
+  <!-- ====== NAGŁÓWEK ====== -->
+  <div class="header">
+    <h1>🏫 <span>Zarządzanie Salami</span></h1>
+    <div class="header-actions">
+      <a th:href="@{/sale/nowy}" class="btn btn-primary">➕ Nowa sala</a>
+      <a th:href="@{/dashboard}" class="btn btn-back">← Powrót</a>
+    </div>
   </div>
 
-  <div id="loadingSpinner" class="loading-spinner">
-    <span>Ładowanie danych...</span>
+  <!-- ====== LISTA SAL ====== -->
+  <div th:if="${sale == null or #lists.isEmpty(sale)}" class="empty-state">
+    <div class="icon">📭</div>
+    <h2>Brak sal</h2>
+    <p>Kliknij przycisk "Nowa sala" aby dodać pierwszą salę.</p>
   </div>
 
-  <section aria-label="Tabela sal lekcyjnych">
-    <h2>Lista sal lekcyjnych</h2>
+  <div th:unless="${sale == null or #lists.isEmpty(sale)}" class="cards-grid">
+    <div class="card" th:each="s : ${sale}">
+      <!-- HEADER -->
+      <div class="card-header">
+        <span class="card-number" th:text="${s.numerSali}">104-A</span>
+        <span class="card-id"># <span th:text="${s.id}">1</span></span>
+      </div>
 
-    <!-- Komunikat gdy brak sal lub lista jest pusta -->
-    <div th:if="${sale == null or #lists.isEmpty(sale)}" class="empty-state" role="alert">
-      <p>📭 Brak sal w systemie. Kliknij przycisk "Dodaj nową salę", aby utworzyć pierwszą salę.</p>
+      <!-- BODY -->
+      <div class="card-body">
+        <div class="detail">
+          <span class="label">📊 Pojemność</span>
+          <span th:text="${s.pojemnosc} + ' osób'">30 osób</span>
+        </div>
+        <div class="detail">
+          <span class="label">📌 Typ</span>
+          <span th:switch="${s.typSali}">
+                        <span th:case="'WYKLADOWA'" class="badge badge-lecture">Wykładowa</span>
+                        <span th:case="'LABORATORYJNA'" class="badge badge-lab">Laboratoryjna</span>
+                        <span th:case="'KOMPUTEROWA'" class="badge badge-computer">Komputerowa</span>
+                        <span th:case="'SEMINARYJNA'" class="badge badge-seminar">Seminaryjna</span>
+                        <span th:case="'INNA'" class="badge badge-other">Inna</span>
+                        <span th:case="*" th:text="${s.typSali}">-</span>
+                    </span>
+        </div>
+      </div>
+
+      <!-- AKCJE -->
+      <div class="card-actions">
+        <a th:href="@{/sale/edycja/{id}(id=${s.id})}" class="btn btn-edit">✏️ Edytuj</a>
+        <form th:action="@{/sale/usun/{id}(id=${s.id})}" method="post" style="display: inline;">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button type="submit" class="btn btn-delete"
+                  onclick="return confirm('Czy na pewno chcesz usunąć salę ' + '${s.numerSali}' + '?')">
+            🗑️ Usuń
+          </button>
+        </form>
+      </div>
     </div>
+  </div>
 
-    <!-- Tabela widoczna tylko gdy lista istnieje i nie jest pusta -->
-    <div th:unless="${sale == null or #lists.isEmpty(sale)}" class="table-responsive">
-      <table class="table table-striped">
-        <thead>
-        <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Numer sali</th>
-          <th scope="col">Pojemność</th>
-          <th scope="col">Akcje</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="s : ${sale}">
-          <td th:text="${s.id}" class="align-middle">1</td>
-          <td th:text="${s.numerSali}" class="align-middle">104-A</td>
-          <td th:text="${s.pojemnosc}" class="align-middle">30</td>
-          <td class="align-middle">
-            <div class="action-buttons">
-              <a th:href="@{/sale/edycja/{id}(id=${s.id})}"
-                 th:aria-label="'Edytuj salę numer ' + ${s.numerSali}"
-                 class="btn-warning">Edytuj</a>
+  <!-- ====== STOPKA ====== -->
+  <div class="footer">
+        <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">
+            System Oceniania &bull; Zarządzanie salami
+        </span>
+  </div>
+</div>
 
-              <form th:action="@{/sale/usun/{id}(id=${s.id})}" method="post" style="display: inline;"
-                    th:data-numer="${s.numerSali}">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <button type="submit" class="btn-danger"
-                        th:aria-label="'Usuń salę numer ' + ${s.numerSali}">Usuń</button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <a th:href="@{/dashboard}" class="back-link" aria-label="Powrót do panelu głównego">← Powrót do panelu</a>
-</main>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var spinner = document.getElementById('loadingSpinner');
-    if (spinner) spinner.style.display = 'none';
-
-    document.querySelectorAll('form[data-numer]').forEach(function(form) {
-      form.addEventListener('submit', function(e) {
-        var numer = form.getAttribute('data-numer') || '?';
-        var escaped = numer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        if (!confirm('Czy na pewno chcesz usunąć salę numer ' + escaped + '?')) {
-          e.preventDefault();
-        }
-      });
-    });
-  });
-</script>
 </body>
 </html>

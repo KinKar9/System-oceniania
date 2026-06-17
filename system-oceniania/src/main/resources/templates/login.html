@@ -3,73 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logowanie do Systemu Oceniania</title>
+    <title>System Oceniania – Logowanie</title>
     <style>
+        /* ---------- RESET ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ---------- TŁO STRONY ---------- */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+
+            /* --- OPTION 1: GRADIENT (działa zawsze, bez obrazu) --- */
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            /* --- OPTION 2: ZDJĘCIE Z INTERNETU (odkomentuj i zakomentuj gradient) --- */
+            /* background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c7f1?w=1920'); */
+            /* background-size: cover; */
+            /* background-position: center; */
+            /* background-attachment: fixed; */
         }
+
+        /* ---------- KONTENER LOGOWANIA ---------- */
         .login-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 300px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 40px 35px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 400px;
+            width: 100%;
+            backdrop-filter: blur(4px);
+            transition: transform 0.2s;
         }
+
+        .login-container:hover {
+            transform: scale(1.01);
+        }
+
         h2 {
             text-align: center;
+            color: #1a2a6c;
+            font-size: 26px;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
-        input {
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
             width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            box-sizing: border-box;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: #fafafa;
         }
+
+        .form-group input:focus {
+            border-color: #1a2a6c;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(26, 42, 108, 0.15);
+            background: white;
+        }
+
         button {
             width: 100%;
-            padding: 10px;
-            background-color: #0066cc;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a2a6c, #2d4373);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 6px;
         }
+
         button:hover {
-            background-color: #0055aa;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 42, 108, 0.4);
         }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* ---------- KOMUNIKATY ---------- */
         .error {
-            color: red;
-            text-align: center;
-            margin-bottom: 10px;
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            border-left: 4px solid #d32f2f;
+            font-size: 14px;
         }
+
         .info {
-            color: green;
-            text-align: center;
-            margin-bottom: 10px;
+            color: #155724;
+            background: #d4edda;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            border-left: 4px solid #28a745;
+            font-size: 14px;
+        }
+
+        /* ---------- RESPONSYWNOŚĆ ---------- */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 25px 20px;
+            }
+            h2 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
+
 <div class="login-container">
-    <h2>System Oceniania – Logowanie</h2>
+    <h2>📚 System Oceniania</h2>
+    <div class="subtitle">Zaloguj się do swojego konta</div>
+
+    <!-- Komunikaty błędów / wylogowania -->
+    <div th:if="${param.error}" class="error">
+        ⚠️ Nieprawidłowy login lub hasło. Spróbuj ponownie.
+    </div>
+    <div th:if="${param.logout}" class="info">
+        ✅ Zostałeś pomyślnie wylogowany.
+    </div>
+
     <form th:action="@{/login}" method="post" autocomplete="off">
+        <!-- CSRF Token -->
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-        <div th:if="${param.error}" class="error">Nieprawidłowa nazwa użytkownika lub hasło</div>
-        <div th:if="${param.logout}" class="info">Zostałeś wylogowany</div>
 
-        <label for="username">Nazwa użytkownika:</label>
-        <input type="text" id="username" name="username" required autofocus autocomplete="off">
+        <div class="form-group">
+            <label for="username">Nazwa użytkownika</label>
+            <input type="text" id="username" name="username" placeholder="Wpisz nazwę użytkownika" required autofocus>
+        </div>
 
-        <label for="password">Hasło:</label>
-        <input type="password" id="password" name="password" required autocomplete="new-password">
+        <div class="form-group">
+            <label for="password">Hasło</label>
+            <input type="password" id="password" name="password" placeholder="Wpisz hasło" required autocomplete="new-password">
+        </div>
 
-        <button type="submit" aria-label="Zaloguj się do systemu">Zaloguj się</button>
+        <button type="submit" aria-label="Zaloguj się do systemu">🔑 Zaloguj się</button>
     </form>
 </div>
+
 </body>
 </html>

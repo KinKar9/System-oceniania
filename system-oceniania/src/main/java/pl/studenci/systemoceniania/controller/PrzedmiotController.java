@@ -35,9 +35,9 @@ public class PrzedmiotController {
         return "przedmioty/formularz";
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @GetMapping("/edycja/{id}")
-    public String edycja(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        // Walidacja ID
+    public String edycja(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
         if (id == null || id <= 0) {
             redirectAttributes.addFlashAttribute("error", "Nieprawidłowe ID przedmiotu.");
             return "redirect:/przedmioty";
@@ -72,8 +72,9 @@ public class PrzedmiotController {
         return "redirect:/przedmioty";
     }
 
+    // 🔥 ZMIENIONO: Long → Integer
     @PostMapping("/usun/{id}")
-    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String delete(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         if (id == null || id <= 0) {
             redirectAttributes.addFlashAttribute("error", "Nieprawidłowe ID przedmiotu.");
             return "redirect:/przedmioty";

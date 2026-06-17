@@ -87,6 +87,17 @@
             <span class="label">PESEL:</span>
             <span class="value" th:text="${student.pesel != null and #strings.length(student.pesel) >= 7 ? '***' + #strings.substring(student.pesel, 7) : 'brak'}">-</span>
         </div>
+        <div class="field">
+            <span class="label">Link publiczny:</span>
+            <span class="value">
+        <a th:if="${student.secureToken != null}"
+           th:href="@{/public/student/{token}(token=${student.secureToken})}"
+           target="_blank">
+            Zobacz profil publiczny
+        </a>
+        <span th:unless="${student.secureToken != null}">Brak wygenerowanego linku</span>
+    </span>
+        </div>
     </div>
     <a th:href="@{/student/dashboard}" class="btn">Powrót do panelu</a>
 </div>

@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 import pl.studenci.systemoceniania.entity.Sala;
 
 @Repository
-public interface SalaRepository extends JpaRepository<Sala, Long> {}
+public interface SalaRepository extends JpaRepository<Sala, Integer> {
+}
